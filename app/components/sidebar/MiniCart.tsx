@@ -47,9 +47,12 @@ export default function MiniCart() {
         <span className="font-bold text-green-600">228.000đ</span>
       </div>
 
-      <button className="mt-4 w-full rounded-xl bg-green-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-green-700">
+      <a
+        href="/checkout"
+        className="mt-4 block w-full rounded-xl bg-green-600 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-green-700"
+      >
         Xem giỏ hàng
-      </button>
+      </a>
     </div>
   );
 }
