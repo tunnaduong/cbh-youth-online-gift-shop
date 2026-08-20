@@ -2,6 +2,9 @@
 
 import { ChevronDown, Search, ShoppingCart, User } from "lucide-react";
 import Image from "next/image";
+import { useAuth } from "../contexts/AuthContext";
+import { getAvatarUrl } from "../lib/api";
+import { getLoginUrl } from "../lib/auth";
 
 const navLinks = [
   { label: "Trang chủ", active: true },
@@ -10,6 +13,50 @@ const navLinks = [
   { label: "Giới thiệu" },
   { label: "Liên hệ" },
 ];
+
+function AccountLink() {
+  const { user, loading, loggedIn } = useAuth();
+
+  if (loading) {
+    return (
+      <span className="flex items-center gap-2 text-sm font-medium text-slate-400">
+        <User className="h-5 w-5" />
+        <span className="hidden sm:inline">…</span>
+      </span>
+    );
+  }
+
+  if (loggedIn && user) {
+    return (
+      <a
+        href={`https://www.chuyenbienhoa.com/${user.username}`}
+        className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-green-600"
+      >
+        <Image
+          src={getAvatarUrl(user.username)}
+          alt={user.profile_name || user.username}
+          width={28}
+          height={28}
+          className="h-7 w-7 rounded-full object-cover"
+          unoptimized
+        />
+        <span className="hidden sm:inline max-w-[120px] truncate">
+          {user.profile_name || user.username}
+        </span>
+      </a>
+    );
+  }
+
+  return (
+    <a
+      href={getLoginUrl()}
+      className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-green-600"
+    >
+      <User className="h-5 w-5" />
+      <span className="hidden sm:inline">Đăng nhập</span>
+    </a>
+  );
+}
 
 export default function Header() {
   return (
@@ -64,10 +111,7 @@ export default function Header() {
             </span>
             <span className="hidden sm:inline">Giỏ hàng</span>
           </a>
-          <a href="#" className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-green-600">
-            <User className="h-5 w-5" />
-            <span className="hidden sm:inline">Đăng nhập</span>
-          </a>
+          <AccountLink />
         </div>
       </div>
     </header>
