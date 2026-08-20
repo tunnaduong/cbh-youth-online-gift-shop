@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, Search, ShoppingCart, User } from "lucide-react";
-import FrogLogo from "./FrogLogo";
+import Image from "next/image";
 
 const navLinks = [
   { label: "Trang chủ", active: true },
@@ -16,7 +16,7 @@ export default function Header() {
     <header className="sticky top-0 z-30 border-b border-slate-100 bg-white">
       <div className="mx-auto flex h-[70px] max-w-[1280px] items-center justify-between gap-6 px-6">
         <a href="#" className="flex shrink-0 items-center gap-2.5">
-          <FrogLogo />
+          <Image src="/images/logo.png" alt="Giftshop logo" width={36} height={36} className="h-9 w-9" />
           <span className="leading-tight">
             <span className="block text-lg font-bold text-slate-800">Giftshop</span>
             <span className="block text-xs font-medium text-slate-500">
