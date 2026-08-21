@@ -142,6 +142,10 @@ export interface PaymentStatusResponse {
   payment?: QrPayment;
 }
 
+export function cancelShopOrder(orderId: number): Promise<{ message: string; order: ShopOrder }> {
+  return shopFetch(`/shop/orders/${orderId}/cancel`, { method: "POST" }, true);
+}
+
 export function getOrderPaymentStatus(orderId: number): Promise<PaymentStatusResponse> {
   return shopFetch<PaymentStatusResponse>(`/shop/orders/${orderId}/payment-status`, {}, true);
 }
