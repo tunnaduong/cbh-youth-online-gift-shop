@@ -7,6 +7,7 @@ import TrustBadges from "./components/sidebar/TrustBadges";
 import MiniCart from "./components/sidebar/MiniCart";
 import PromoBanner from "./components/sidebar/PromoBanner";
 import HomeGate from "./components/HomeGate";
+import { CatalogProvider } from "./contexts/CatalogContext";
 
 export default function Home() {
   return (
@@ -14,20 +15,22 @@ export default function Home() {
       <Header />
       <main className="mx-auto w-full max-w-[1280px] px-6 py-6">
         <HomeGate>
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-            <div className="flex flex-col gap-6 lg:col-span-9">
-              <HeroBanner />
-              <CategoryBar />
-              <FeaturedProducts />
-              <FeaturesBar />
-            </div>
+          <CatalogProvider>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+              <div className="flex flex-col gap-6 lg:col-span-9">
+                <HeroBanner />
+                <CategoryBar />
+                <FeaturedProducts />
+                <FeaturesBar />
+              </div>
 
-            <div className="flex flex-col gap-4 lg:col-span-3">
-              <TrustBadges />
-              <MiniCart />
-              <PromoBanner />
+              <div className="flex flex-col gap-4 lg:col-span-3">
+                <TrustBadges />
+                <MiniCart />
+                <PromoBanner />
+              </div>
             </div>
-          </div>
+          </CatalogProvider>
         </HomeGate>
       </main>
     </>

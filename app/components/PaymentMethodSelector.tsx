@@ -4,23 +4,14 @@ import { useState } from "react";
 import { Banknote, Coins, QrCode } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
-// Same SePay QR image endpoint + bank account the mobile app's wallet
-// deposit screen uses (DepositScreen.js) - reusing it here keeps "pay by
-// QR" visually/behaviorally consistent with the wallet top-up flow instead
-// of inventing a second QR pattern.
-const BANK_ACCOUNT = "99421112003";
-const BANK_NAME = "TPBank";
-const BANK_ACCOUNT_HOLDER = "CHUYEN BIEN HOA";
-
-// Same conversion the mobile wallet deposit screen shows
-// (expectedPoints = floor((amount - 1000) / 100)) - 100đ per point.
+// Same conversion the backend uses (PointsService::convertVNDToPoints) and
+// the mobile wallet deposit screen shows - 100đ per point.
 const POINTS_PER_VND = 100;
 
 export type PaymentMethod = "points" | "qr" | "cod";
 
 interface PaymentMethodSelectorProps {
   amountVnd: number;
-  orderCode: string;
   onConfirm: (method: PaymentMethod) => void;
   confirming?: boolean;
 }
@@ -49,9 +40,11 @@ const METHOD_ICONS: Record<PaymentMethod, React.ElementType> = {
   cod: Banknote,
 };
 
+// Just the method picker - the actual QR (with the server-generated
+// payment_code) only exists once an order has been created, so that lives on
+// the checkout page's post-submit state instead of being previewed here.
 export default function PaymentMethodSelector({
   amountVnd,
-  orderCode,
   onConfirm,
   confirming = false,
 }: PaymentMethodSelectorProps) {
@@ -61,8 +54,6 @@ export default function PaymentMethodSelector({
   const pointsBalance = user?.total_points ?? 0;
   const pointsNeeded = Math.ceil(amountVnd / POINTS_PER_VND);
   const hasEnoughPoints = pointsBalance >= pointsNeeded;
-
-  const qrUrl = `https://qr.sepay.vn/img?acc=${BANK_ACCOUNT}&bank=${BANK_NAME}&amount=${amountVnd}&des=${orderCode}&template=compact`;
 
   return (
     <div className="flex flex-col gap-3">
@@ -115,31 +106,6 @@ export default function PaymentMethodSelector({
         );
       })}
 
-      {selected === "qr" && (
-        <div className="mt-1 flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white p-5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={qrUrl}
-            alt="Mã QR thanh toán"
-            className="h-56 w-56 rounded-xl"
-          />
-          <div className="w-full space-y-1.5 text-sm">
-            <Row label="Ngân hàng" value={BANK_NAME} />
-            <Row label="Số tài khoản" value={BANK_ACCOUNT} />
-            <Row label="Chủ tài khoản" value={BANK_ACCOUNT_HOLDER} />
-            <Row
-              label="Số tiền"
-              value={`${amountVnd.toLocaleString("vi-VN")}đ`}
-            />
-            <Row label="Nội dung" value={orderCode} />
-          </div>
-          <p className="text-center text-xs text-slate-400">
-            Quét mã bằng app ngân hàng bất kỳ - đơn hàng tự động xác nhận sau
-            khi chuyển khoản thành công.
-          </p>
-        </div>
-      )}
-
       <button
         type="button"
         disabled={confirming || (selected === "points" && !hasEnoughPoints)}
@@ -152,17 +118,8 @@ export default function PaymentMethodSelector({
           ? "Đặt hàng (COD)"
           : selected === "points"
           ? "Thanh toán bằng điểm"
-          : "Tôi đã chuyển khoản"}
+          : "Tạo mã QR thanh toán"}
       </button>
-    </div>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between border-b border-slate-100 py-1.5 last:border-0">
-      <span className="text-slate-500">{label}</span>
-      <span className="font-semibold text-slate-800">{value}</span>
     </div>
   );
 }

@@ -1,21 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import Header from "../components/Header";
 import PaymentMethodSelector, {
   type PaymentMethod,
 } from "../components/PaymentMethodSelector";
 import { useAuth } from "../contexts/AuthContext";
+import { useCart } from "../contexts/CartContext";
 import { getLoginUrl } from "../lib/auth";
-
-// Mirrors MiniCart's demo items - there's no real cart/order API yet, so
-// this page's job for now is the payment method step itself (points / QR /
-// COD), not a full cart. Swap this for real cart state once one exists.
-const DEMO_ITEMS = [
-  { name: "Áo thun Chuyên Biên Hòa Classic", price: 199000, qty: 1 },
-  { name: "Móc khóa logo Chuyên Biên Hòa", price: 29000, qty: 1 },
-];
+import {
+  createShopOrder,
+  getOrderPaymentStatus,
+  type QrPayment,
+  type ShopOrder,
+} from "../lib/shop";
 
 const METHOD_LABEL: Record<PaymentMethod, string> = {
   points: "điểm hoạt động",
@@ -25,27 +24,75 @@ const METHOD_LABEL: Record<PaymentMethod, string> = {
 
 export default function CheckoutPage() {
   const { loading, loggedIn } = useAuth();
-  const [confirming, setConfirming] = useState(false);
-  const [placedWith, setPlacedWith] = useState<PaymentMethod | null>(null);
+  const { items, totalAmount, clear } = useCart();
 
-  const total = useMemo(
-    () => DEMO_ITEMS.reduce((sum, item) => sum + item.price * item.qty, 0),
-    []
-  );
-  const orderCode = useMemo(
-    () => `GIFTSHOP${Date.now().toString().slice(-8)}`,
-    []
-  );
+  const [shippingAddress, setShippingAddress] = useState("");
+  const [phone, setPhone] = useState("");
+  const [note, setNote] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleConfirm = (method: PaymentMethod) => {
-    setConfirming(true);
-    // No order-placement API exists yet - this simulates the confirmation
-    // step so the 3 payment methods are wired up end-to-end in the UI, and
-    // swapping in a real POST /orders call later is a one-line change here.
-    setTimeout(() => {
-      setConfirming(false);
-      setPlacedWith(method);
-    }, 600);
+  const [order, setOrder] = useState<ShopOrder | null>(null);
+  const [qrPayment, setQrPayment] = useState<QrPayment | null>(null);
+  const [paid, setPaid] = useState(false);
+
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Poll the same way the mobile wallet deposit screen polls its balance -
+  // the SePay webhook confirms payment out-of-band (see
+  // SEPayWebhookController::processShopOrderPayment), this just checks back
+  // every few seconds until it lands.
+  useEffect(() => {
+    if (!order || order.payment_method !== "qr" || paid) return;
+
+    pollRef.current = setInterval(async () => {
+      try {
+        const status = await getOrderPaymentStatus(order.id);
+        if (status.payment_status === "paid") {
+          setPaid(true);
+          clear();
+          if (pollRef.current) clearInterval(pollRef.current);
+        }
+      } catch {
+        // Best-effort polling - a transient failure just retries next tick.
+      }
+    }, 3000);
+
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order, paid]);
+
+  const handleConfirm = async (method: PaymentMethod) => {
+    if (!shippingAddress.trim() || !phone.trim()) {
+      setFormError("Vui lòng nhập địa chỉ giao hàng và số điện thoại.");
+      return;
+    }
+    setFormError(null);
+    setSubmitting(true);
+    try {
+      const res = await createShopOrder({
+        items: items.map((i) => ({ product_id: i.product.id, quantity: i.quantity })),
+        shipping_address: shippingAddress.trim(),
+        phone: phone.trim(),
+        note: note.trim() || undefined,
+        payment_method: method,
+      });
+      setOrder(res.order);
+      if (method === "qr" && res.payment) {
+        setQrPayment(res.payment);
+      } else {
+        // points: already deducted+paid server-side. cod: accepted, paid on
+        // delivery. Either way there's nothing left to wait on.
+        setPaid(true);
+        clear();
+      }
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Không thể tạo đơn hàng.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -72,16 +119,36 @@ export default function CheckoutPage() {
               Đăng nhập để tiếp tục
             </a>
           </div>
-        ) : placedWith ? (
+        ) : order && paid ? (
           <div className="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white p-10 text-center">
             <CheckCircle2 className="h-12 w-12 text-green-600" />
             <h2 className="text-lg font-bold text-slate-800">
               Đặt hàng thành công
             </h2>
             <p className="text-sm text-slate-500">
-              Đơn {orderCode} đã được ghi nhận, thanh toán bằng{" "}
-              {METHOD_LABEL[placedWith]}.
+              Đơn #{order.id} đã được ghi nhận, thanh toán bằng{" "}
+              {METHOD_LABEL[order.payment_method]}.
             </p>
+          </div>
+        ) : order && qrPayment ? (
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white p-5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={qrPayment.qr_url}
+              alt="Mã QR thanh toán"
+              className="h-56 w-56 rounded-xl"
+            />
+            <div className="w-full space-y-1.5 text-sm">
+              <Row label="Ngân hàng" value={qrPayment.bank_name} />
+              <Row label="Số tài khoản" value={qrPayment.bank_account} />
+              <Row label="Chủ tài khoản" value={qrPayment.bank_account_holder} />
+              <Row label="Số tiền" value={`${qrPayment.amount_vnd.toLocaleString("vi-VN")}đ`} />
+              <Row label="Nội dung" value={qrPayment.payment_code} />
+            </div>
+            <div className="mt-1 flex items-center gap-2 text-xs text-slate-400">
+              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-200 border-t-green-600" />
+              Đang chờ xác nhận chuyển khoản...
+            </div>
           </div>
         ) : (
           <>
@@ -89,44 +156,90 @@ export default function CheckoutPage() {
               <h2 className="mb-3 text-sm font-bold text-slate-800">
                 Đơn hàng
               </h2>
-              <div className="flex flex-col gap-2">
-                {DEMO_ITEMS.map((item) => (
-                  <div
-                    key={item.name}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <span className="text-slate-600">
-                      {item.name} <span className="text-slate-400">x{item.qty}</span>
-                    </span>
-                    <span className="font-medium text-slate-800">
-                      {(item.price * item.qty).toLocaleString("vi-VN")}đ
-                    </span>
-                  </div>
-                ))}
-              </div>
+              {items.length === 0 ? (
+                <p className="text-sm text-slate-400">Giỏ hàng đang trống.</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {items.map(({ product, quantity }) => (
+                    <div
+                      key={product.id}
+                      className="flex items-center justify-between text-sm"
+                    >
+                      <span className="text-slate-600">
+                        {product.name} <span className="text-slate-400">x{quantity}</span>
+                      </span>
+                      <span className="font-medium text-slate-800">
+                        {(product.price * quantity).toLocaleString("vi-VN")}đ
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="my-3 border-t border-slate-100" />
               <div className="flex items-center justify-between text-sm">
                 <span className="font-semibold text-slate-700">
                   Tổng cộng
                 </span>
                 <span className="text-base font-extrabold text-green-600">
-                  {total.toLocaleString("vi-VN")}đ
+                  {totalAmount.toLocaleString("vi-VN")}đ
                 </span>
               </div>
             </div>
 
-            <h2 className="mb-3 text-sm font-bold text-slate-800">
-              Phương thức thanh toán
-            </h2>
-            <PaymentMethodSelector
-              amountVnd={total}
-              orderCode={orderCode}
-              onConfirm={handleConfirm}
-              confirming={confirming}
-            />
+            {items.length > 0 && (
+              <>
+                <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5">
+                  <h2 className="mb-3 text-sm font-bold text-slate-800">
+                    Thông tin giao hàng
+                  </h2>
+                  <div className="flex flex-col gap-3">
+                    <input
+                      value={shippingAddress}
+                      onChange={(e) => setShippingAddress(e.target.value)}
+                      placeholder="Địa chỉ giao hàng"
+                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-green-600/50"
+                    />
+                    <input
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="Số điện thoại"
+                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-green-600/50"
+                    />
+                    <textarea
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                      placeholder="Ghi chú (không bắt buộc)"
+                      rows={2}
+                      className="w-full resize-none rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-green-600/50"
+                    />
+                  </div>
+                </div>
+
+                <h2 className="mb-3 text-sm font-bold text-slate-800">
+                  Phương thức thanh toán
+                </h2>
+                {formError && (
+                  <p className="mb-3 text-sm font-medium text-red-500">{formError}</p>
+                )}
+                <PaymentMethodSelector
+                  amountVnd={totalAmount}
+                  onConfirm={handleConfirm}
+                  confirming={submitting}
+                />
+              </>
+            )}
           </>
         )}
       </main>
     </>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between border-b border-slate-100 py-1.5 last:border-0">
+      <span className="text-slate-500">{label}</span>
+      <span className="font-semibold text-slate-800">{value}</span>
+    </div>
   );
 }
