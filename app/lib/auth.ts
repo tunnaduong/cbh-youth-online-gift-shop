@@ -26,6 +26,22 @@ export function isLoggedIn(): boolean {
   return !!getAuthToken();
 }
 
+/**
+ * Clears the shared auth_token cookie for the whole *.chuyenbienhoa.com
+ * domain, the same one this app only ever reads - this is the one place
+ * this app writes to it, and only in response to the user pressing
+ * "Đăng xuất" (see AuthContext.logout). Setting an already-expired
+ * `expires` on the same domain/path is how a cookie set elsewhere gets
+ * removed from here without needing a server round-trip.
+ */
+export function clearAuthToken(): void {
+  if (typeof document === "undefined") return;
+  const domain = window.location.hostname.endsWith("chuyenbienhoa.com")
+    ? ".chuyenbienhoa.com"
+    : window.location.hostname;
+  document.cookie = `${AUTH_COOKIE_NAME}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${domain}`;
+}
+
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.chuyenbienhoa.com";
 
 /**

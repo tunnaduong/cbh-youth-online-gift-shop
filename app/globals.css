@@ -16,6 +16,34 @@ body {
   color: var(--foreground);
 }
 
+/*
+ * Dark theme: every component in this app is built with the default
+ * Tailwind slate palette (bg-white cards, border-slate-200, text-slate-800,
+ * etc) rather than dark:-prefixed classes. Tailwind v4 utilities read their
+ * color from a CSS custom property (e.g. `.border-slate-200 { border-color:
+ * var(--color-slate-200) }`), so redefining the palette's variables here -
+ * scoped to a `.dark` class on <html> - re-themes the whole app without
+ * touching every component. `.dark` is applied by ThemeContext (see
+ * app/contexts/ThemeContext.tsx), which resolves the user's light/dark/auto
+ * setting (default: auto, i.e. follow the OS) to a concrete class.
+ */
+.dark {
+  --background: #0f172a;
+  --foreground: #e2e8f0;
+
+  --color-white: oklch(27.9% 0.041 260.031); /* card surfaces (was slate-800) */
+  --color-slate-50: oklch(20.8% 0.042 265.755); /* subtle bg tints (was slate-900) */
+  --color-slate-100: oklch(37.2% 0.044 257.287); /* thumbnail/skeleton bg (was slate-700) */
+  --color-slate-200: oklch(44.6% 0.043 257.281); /* default borders (was slate-600) */
+  --color-slate-300: oklch(55.4% 0.046 257.417); /* disabled icons (was slate-500) */
+  --color-slate-400: oklch(70.4% 0.04 256.788); /* muted/placeholder text - unchanged */
+  --color-slate-500: oklch(70.4% 0.04 256.788); /* muted text (was slate-400) */
+  --color-slate-600: oklch(86.9% 0.022 252.894); /* body text (was slate-300) */
+  --color-slate-700: oklch(92.9% 0.013 255.508); /* emphasis text (was slate-200) */
+  --color-slate-800: oklch(96.8% 0.007 247.896); /* headings (was slate-100) */
+  --color-slate-900: oklch(98.4% 0.003 247.858); /* rarely used (was slate-50) */
+}
+
 @keyframes page-enter {
   from {
     opacity: 0;

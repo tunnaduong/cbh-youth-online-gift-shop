@@ -19,6 +19,12 @@ export interface CbhUser {
  * axios client uses - see cbh-youth-online-next-js's AxiosCustom.js. The
  * token comes from the shared auth_token cookie (see ./auth), so a user
  * logged into the main site is already logged in here.
+ *
+ * Only a genuine 401/403 (the token itself is invalid/expired) means "log
+ * this user out" - any other failure (500, a network blip) throws instead,
+ * so AuthContext can keep the existing session up rather than bouncing the
+ * user to a logged-out state over a transient error. The user should only
+ * ever get logged out by pressing "Đăng xuất".
  */
 export async function getCurrentUser(): Promise<CbhUser | null> {
   const token = getAuthToken();
@@ -34,11 +40,8 @@ export async function getCurrentUser(): Promise<CbhUser | null> {
     cache: "no-store",
   });
 
-  if (!res.ok) {
-    // 401/expired token, etc. - treat as logged out rather than throwing,
-    // callers just want to know "is there a usable session right now".
-    return null;
-  }
+  if (res.status === 401 || res.status === 403) return null;
+  if (!res.ok) throw new Error(`Request failed (${res.status})`);
 
   const data = await res.json();
   return data?.data ?? data;

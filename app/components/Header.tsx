@@ -9,6 +9,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
 import { getAvatarUrl } from "../lib/api";
 import { getLoginUrl } from "../lib/auth";
+import SettingsMenu from "./SettingsMenu";
 
 const navLinks = [
   { label: "Trang chủ", href: "/", active: true },
@@ -143,6 +144,7 @@ export default function Header() {
             <span className="hidden sm:inline">Giỏ hàng</span>
           </a>
           <AccountLink />
+          <SettingsMenu />
         </div>
       </div>
     </header>

@@ -9,13 +9,14 @@ import {
   type ReactNode,
 } from "react";
 import { getCurrentUser, type CbhUser } from "../lib/api";
-import { getAuthToken } from "../lib/auth";
+import { clearAuthToken, getAuthToken } from "../lib/auth";
 
 interface AuthContextValue {
   user: CbhUser | null;
   loading: boolean;
   loggedIn: boolean;
   refresh: () => Promise<void>;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextValue>({
   loading: true,
   loggedIn: false,
   refresh: async () => {},
+  logout: () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -36,14 +38,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     try {
+      // getCurrentUser() only ever resolves null on a genuine 401/403 -
+      // anything else (network blip, 500) throws and is swallowed below,
+      // keeping whatever session state we already had. The user should
+      // only ever be logged out by getCurrentUser() confirming the token
+      // is dead, or by pressing "Đăng xuất" (see logout() below).
       const currentUser = await getCurrentUser();
       setUser(currentUser);
     } catch (error) {
       console.error("Failed to load current user:", error);
-      setUser(null);
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // The only path that intentionally signs the user out - clears the
+  // shared cookie so the main site sees the same logged-out state, and
+  // immediately updates local state rather than waiting on a refetch.
+  const logout = useCallback(() => {
+    clearAuthToken();
+    setUser(null);
   }, []);
 
   useEffect(() => {
@@ -60,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, loggedIn: !!user, refresh }}
+      value={{ user, loading, loggedIn: !!user, refresh, logout }}
     >
       {children}
     </AuthContext.Provider>
