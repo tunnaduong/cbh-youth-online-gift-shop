@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 import Header from "../components/Header";
 import PaymentMethodSelector, {
@@ -157,6 +158,20 @@ export default function CheckoutPage() {
               Đơn #{order.id} đã được ghi nhận, thanh toán bằng{" "}
               {METHOD_LABEL[order.payment_method]}.
             </p>
+            <div className="mt-2 flex w-full flex-col gap-2 sm:flex-row">
+              <Link
+                href="/orders"
+                className="flex-1 rounded-xl border border-slate-200 py-3 text-center text-sm font-semibold text-slate-700 transition-colors hover:border-green-600/40 hover:text-green-700"
+              >
+                Xem đơn hàng của tôi
+              </Link>
+              <Link
+                href="/"
+                className="flex-1 rounded-xl bg-green-600 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-green-700"
+              >
+                Tiếp tục mua sắm
+              </Link>
+            </div>
           </div>
         ) : order && qrPayment ? (
           <div className="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white p-5">

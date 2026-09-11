@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Star, ShoppingCart } from "lucide-react";
 import ProductThumb from "./ProductThumb";
 import { getShopProducts, type ShopProduct } from "../lib/shop";
@@ -9,18 +10,20 @@ import { useCatalog } from "../contexts/CatalogContext";
 import { useCart } from "../contexts/CartContext";
 
 export default function FeaturedProducts() {
-  const { activeCategoryId } = useCatalog();
+  const { activeCategoryId, search } = useCatalog();
   const { addItem } = useCart();
   const [products, setProducts] = useState<ShopProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
-    getShopProducts(activeCategoryId ? { category_id: activeCategoryId } : undefined)
+    getShopProducts({
+      ...(activeCategoryId ? { category_id: activeCategoryId } : {}),
+      ...(search ? { search } : {}),
+    })
       .then((res) => setProducts(res.data))
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
-  }, [activeCategoryId]);
+  }, [activeCategoryId, search]);
 
   return (
     <section>
@@ -51,23 +54,27 @@ export default function FeaturedProducts() {
               key={product.id}
               className="group overflow-hidden rounded-2xl border border-slate-100 bg-white transition-shadow hover:shadow-md"
             >
-              <div className="relative">
-                <ProductThumb
-                  icon={getIconForSlug(product.category?.slug)}
-                  imageUrl={product.image_url}
-                  alt={product.name}
-                  className="aspect-square w-full"
-                />
-                {product.stock <= 0 && (
-                  <span className="absolute left-2.5 top-2.5 rounded-lg bg-slate-700 px-2 py-1 text-[11px] font-semibold text-white">
-                    Hết hàng
-                  </span>
-                )}
-              </div>
+              <Link href={`/product/${product.id}`} className="block">
+                <div className="relative">
+                  <ProductThumb
+                    icon={getIconForSlug(product.category?.slug)}
+                    imageUrl={product.image_url}
+                    alt={product.name}
+                    className="aspect-square w-full"
+                  />
+                  {product.stock <= 0 && (
+                    <span className="absolute left-2.5 top-2.5 rounded-lg bg-slate-700 px-2 py-1 text-[11px] font-semibold text-white">
+                      Hết hàng
+                    </span>
+                  )}
+                </div>
+              </Link>
               <div className="p-3.5">
-                <p className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold text-slate-800">
-                  {product.name}
-                </p>
+                <Link href={`/product/${product.id}`}>
+                  <p className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold text-slate-800 hover:text-green-700">
+                    {product.name}
+                  </p>
+                </Link>
                 <p className="mt-1.5 font-bold text-green-600">
                   {product.price.toLocaleString("vi-VN")}đ
                 </p>

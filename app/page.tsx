@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Header from "./components/Header";
 import HeroBanner from "./components/HeroBanner";
 import CategoryBar from "./components/CategoryBar";
@@ -15,22 +16,27 @@ export default function Home() {
       <Header />
       <main className="mx-auto w-full max-w-[1280px] px-6 py-6">
         <HomeGate>
-          <CatalogProvider>
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-              <div className="flex flex-col gap-6 lg:col-span-9">
-                <HeroBanner />
-                <CategoryBar />
-                <FeaturedProducts />
-                <FeaturesBar />
-              </div>
+          {/* CatalogProvider reads the ?search= query param via
+              useSearchParams, which Next.js requires a Suspense boundary
+              around. */}
+          <Suspense>
+            <CatalogProvider>
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+                <div id="catalog" className="flex scroll-mt-24 flex-col gap-6 lg:col-span-9">
+                  <HeroBanner />
+                  <CategoryBar />
+                  <FeaturedProducts />
+                  <FeaturesBar />
+                </div>
 
-              <div className="flex flex-col gap-4 lg:col-span-3">
-                <TrustBadges />
-                <MiniCart />
-                <PromoBanner />
+                <div className="flex flex-col gap-4 lg:col-span-3">
+                  <TrustBadges />
+                  <MiniCart />
+                  <PromoBanner />
+                </div>
               </div>
-            </div>
-          </CatalogProvider>
+            </CatalogProvider>
+          </Suspense>
         </HomeGate>
       </main>
     </>

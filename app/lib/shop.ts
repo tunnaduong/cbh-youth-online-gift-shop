@@ -110,6 +110,15 @@ export function getShopProducts(params?: {
   return shopFetch<Paginated<ShopProduct>>(`/shop/products${qs ? `?${qs}` : ""}`);
 }
 
+export function getShopProduct(id: number): Promise<ShopProduct> {
+  return shopFetch<ShopProduct>(`/shop/products/${id}`);
+}
+
+export function getMyShopOrders(page?: number): Promise<Paginated<ShopOrder>> {
+  const qs = page ? `?page=${page}` : "";
+  return shopFetch<Paginated<ShopOrder>>(`/shop/my-orders${qs}`, {}, true);
+}
+
 export interface CreateOrderPayload {
   items: { product_id: number; quantity: number }[];
   shipping_address: string;

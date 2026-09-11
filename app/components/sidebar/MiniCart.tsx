@@ -1,8 +1,7 @@
 "use client";
 
 import { ShoppingCart } from "lucide-react";
-import ProductThumb from "../ProductThumb";
-import { getIconForSlug } from "../../lib/categoryIcons";
+import CartLineItem from "../CartLineItem";
 import { useCart } from "../../contexts/CartContext";
 
 export default function MiniCart() {
@@ -24,22 +23,8 @@ export default function MiniCart() {
         </p>
       ) : (
         <div className="flex flex-col gap-3">
-          {items.map(({ product, quantity }) => (
-            <div key={product.id} className="flex items-center gap-3">
-              <ProductThumb
-                icon={getIconForSlug(product.category?.slug)}
-                imageUrl={product.image_url}
-                alt={product.name}
-                className="h-12 w-12 shrink-0 rounded-xl"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-slate-800">{product.name}</p>
-                <p className="text-sm font-semibold text-green-600">
-                  {product.price.toLocaleString("vi-VN")}đ
-                </p>
-              </div>
-              <span className="text-xs text-slate-400">x{quantity}</span>
-            </div>
+          {items.map((item) => (
+            <CartLineItem key={item.product.id} item={item} />
           ))}
         </div>
       )}
@@ -54,7 +39,7 @@ export default function MiniCart() {
       </div>
 
       <a
-        href="/checkout"
+        href="/cart"
         className="mt-4 block w-full rounded-xl bg-green-600 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-green-700"
       >
         Xem giỏ hàng

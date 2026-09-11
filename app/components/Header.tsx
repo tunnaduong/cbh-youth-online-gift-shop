@@ -1,17 +1,19 @@
 "use client";
 
-import { ChevronDown, Search, ShoppingCart, User } from "lucide-react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Search, ShoppingCart, User } from "lucide-react";
 import Image from "next/image";
 import { useAuth } from "../contexts/AuthContext";
+import { useCart } from "../contexts/CartContext";
 import { getAvatarUrl } from "../lib/api";
 import { getLoginUrl } from "../lib/auth";
 
 const navLinks = [
-  { label: "Trang chủ", active: true },
-  { label: "Sản phẩm", dropdown: true },
-  { label: "Bộ sưu tập" },
-  { label: "Giới thiệu" },
-  { label: "Liên hệ" },
+  { label: "Trang chủ", href: "/", active: true },
+  { label: "Sản phẩm", href: "/#catalog" },
+  { label: "Đơn hàng của tôi", href: "/orders" },
 ];
 
 function AccountLink() {
@@ -58,11 +60,43 @@ function AccountLink() {
   );
 }
 
+function SearchBox() {
+  const router = useRouter();
+  const [query, setQuery] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = query.trim();
+    router.push(trimmed ? `/?search=${encodeURIComponent(trimmed)}#catalog` : "/#catalog");
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="relative hidden max-w-xs flex-1 md:block">
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Tìm kiếm sản phẩm..."
+        className="w-full rounded-full bg-slate-100 py-2.5 pl-4 pr-10 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-green-600/30"
+      />
+      <button
+        type="submit"
+        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-green-600"
+        aria-label="Tìm kiếm"
+      >
+        <Search className="h-4 w-4" />
+      </button>
+    </form>
+  );
+}
+
 export default function Header() {
+  const { totalQuantity } = useCart();
+
   return (
     <header className="sticky top-0 z-30 border-b border-slate-100 bg-white">
       <div className="mx-auto flex h-[70px] max-w-[1280px] items-center justify-between gap-6 px-6">
-        <a href="#" className="flex shrink-0 items-center gap-2.5">
+        <Link href="/" className="flex shrink-0 items-center gap-2.5">
           <Image src="/images/logo.png" alt="Giftshop logo" width={36} height={36} className="h-9 w-9" />
           <span className="leading-tight">
             <span className="block text-lg font-bold text-slate-800">Giftshop</span>
@@ -70,22 +104,15 @@ export default function Header() {
               Chuyên Biên Hòa
             </span>
           </span>
-        </a>
+        </Link>
 
-        <div className="relative hidden max-w-xs flex-1 md:block">
-          <input
-            type="text"
-            placeholder="Tìm kiếm sản phẩm..."
-            className="w-full rounded-full bg-slate-100 py-2.5 pl-4 pr-10 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-green-600/30"
-          />
-          <Search className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-        </div>
+        <SearchBox />
 
         <nav className="hidden items-center gap-7 lg:flex">
           {navLinks.map((link) => (
             <a
               key={link.label}
-              href="#"
+              href={link.href}
               className={`relative flex items-center gap-1 pb-1 text-sm font-medium transition-colors ${
                 link.active
                   ? "text-green-600"
@@ -93,7 +120,6 @@ export default function Header() {
               }`}
             >
               {link.label}
-              {link.dropdown && <ChevronDown className="h-3.5 w-3.5" />}
               {link.active && (
                 <span className="absolute -bottom-0 left-0 h-0.5 w-full rounded-full bg-green-600" />
               )}
@@ -102,12 +128,17 @@ export default function Header() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-5">
-          <a href="#" className="relative flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-green-600">
+          <a
+            href="/cart"
+            className="relative flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-green-600"
+          >
             <span className="relative">
               <ShoppingCart className="h-5 w-5" />
-              <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-green-600 text-[10px] font-bold text-white">
-                2
-              </span>
+              {totalQuantity > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-green-600 text-[10px] font-bold text-white">
+                  {totalQuantity > 9 ? "9+" : totalQuantity}
+                </span>
+              )}
             </span>
             <span className="hidden sm:inline">Giỏ hàng</span>
           </a>

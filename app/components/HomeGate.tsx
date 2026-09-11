@@ -5,11 +5,10 @@ import { useAuth } from "../contexts/AuthContext";
 import { getLoginUrl } from "../lib/auth";
 
 /**
- * Every product/price/cart shown on this site right now is placeholder
- * content (there's no real catalog API yet) - gating it behind login isn't
- * about protecting real data, it's so a logged-out visitor sees it's a demo
- * rather than mistaking it for a working store, with a clear way to sign in
- * (via the shared CBH account, see ../lib/auth) to get past the preview.
+ * Giftshop is members-only - only logged-in CBH Youth Online accounts can
+ * browse/buy, so a logged-out visitor sees a blurred preview instead of the
+ * live catalog, with a clear way to sign in (via the shared CBH account,
+ * see ../lib/auth) to get past it.
  */
 export default function HomeGate({ children }: { children: React.ReactNode }) {
   const { loading, loggedIn } = useAuth();
