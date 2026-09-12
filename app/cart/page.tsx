@@ -4,10 +4,13 @@ import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import Header from "../components/Header";
 import CartLineItem from "../components/CartLineItem";
+import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
+import { getLoginUrl } from "../lib/auth";
 
 export default function CartPage() {
   const { items, totalAmount, clear } = useCart();
+  const { loading: authLoading, loggedIn } = useAuth();
 
   return (
     <>
@@ -17,7 +20,23 @@ export default function CartPage() {
           Giỏ hàng
         </h1>
 
-        {items.length === 0 ? (
+        {authLoading ? (
+          <div className="flex justify-center py-16">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-green-600" />
+          </div>
+        ) : !loggedIn ? (
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white p-10 text-center">
+            <p className="text-sm text-slate-500">
+              Đăng nhập bằng tài khoản Chuyên Biên Hòa để xem giỏ hàng.
+            </p>
+            <a
+              href={getLoginUrl()}
+              className="mt-1 rounded-xl bg-green-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-700"
+            >
+              Đăng nhập để tiếp tục
+            </a>
+          </div>
+        ) : items.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white p-12 text-center">
             <ShoppingCart className="h-10 w-10 text-slate-300" />
             <p className="text-sm text-slate-500">Giỏ hàng đang trống.</p>
