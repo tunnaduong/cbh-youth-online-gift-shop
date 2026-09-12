@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Search, ShoppingCart, User } from "lucide-react";
 import Image from "next/image";
@@ -12,7 +12,7 @@ import { getLoginUrl } from "../lib/auth";
 import SettingsMenu from "./SettingsMenu";
 
 const navLinks = [
-  { label: "Trang chủ", href: "/", active: true },
+  { label: "Trang chủ", href: "/" },
   { label: "Sản phẩm", href: "/#catalog" },
   { label: "Đơn hàng của tôi", href: "/orders" },
 ];
@@ -93,6 +93,7 @@ function SearchBox() {
 
 export default function Header() {
   const { totalQuantity } = useCart();
+  const pathname = usePathname();
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-100 bg-white">
@@ -110,22 +111,25 @@ export default function Header() {
         <SearchBox />
 
         <nav className="hidden items-center gap-7 lg:flex">
-          {navLinks.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              className={`relative flex items-center gap-1 pb-1 text-sm font-medium transition-colors ${
-                link.active
-                  ? "text-green-600"
-                  : "text-slate-600 hover:text-green-600"
-              }`}
-            >
-              {link.label}
-              {link.active && (
-                <span className="absolute -bottom-0 left-0 h-0.5 w-full rounded-full bg-green-600" />
-              )}
-            </a>
-          ))}
+          {navLinks.map((link) => {
+            const active = link.href === pathname;
+            return (
+              <a
+                key={link.label}
+                href={link.href}
+                className={`relative flex items-center gap-1 pb-1 text-sm font-medium transition-colors ${
+                  active
+                    ? "text-green-600"
+                    : "text-slate-600 hover:text-green-600"
+                }`}
+              >
+                {link.label}
+                {active && (
+                  <span className="absolute -bottom-0 left-0 h-0.5 w-full rounded-full bg-green-600" />
+                )}
+              </a>
+            );
+          })}
         </nav>
 
         <div className="flex shrink-0 items-center gap-5">
