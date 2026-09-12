@@ -42,21 +42,66 @@ body {
   --color-slate-700: oklch(92.9% 0.013 255.508); /* emphasis text (was slate-200) */
   --color-slate-800: oklch(96.8% 0.007 247.896); /* headings (was slate-100) */
   --color-slate-900: oklch(98.4% 0.003 247.858); /* rarely used (was slate-50) */
+
+  /*
+   * Status/badge tints (order status chips, inline errors, promo panels)
+   * are built with the light -50 shade of each accent color. Left at their
+   * light-mode value they render as glaring pastel patches on a dark
+   * surface, so darken them the same way the slate palette is darkened
+   * above - a low-lightness, hue-matched surface that the accent's
+   * unmodified -500/600/700 text still reads clearly against.
+   */
+  --color-red-50: oklch(31% 0.06 17.717);
+  --color-amber-50: oklch(32% 0.065 95.277);
+  --color-green-50: oklch(30% 0.05 155.826);
+  --color-blue-50: oklch(30% 0.055 254.604);
+  --color-indigo-50: oklch(30% 0.06 272.314);
+}
+
+/* Smooth, theme-aware crossfade instead of an abrupt flip when the user
+   toggles light/dark (or the OS setting changes in "auto" mode). Scoped to
+   color-affecting properties only, so it never interferes with layout,
+   hover, or the page-transition animation below. */
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+* {
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none;
+  }
 }
 
 @keyframes page-enter {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(14px) scale(0.99);
+    filter: blur(4px);
+  }
+  60% {
+    filter: blur(0);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+    filter: blur(0);
   }
 }
 
 .page-transition {
-  animation: page-enter 0.28s ease-out;
+  animation: page-enter 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
 }
 
 @media (prefers-reduced-motion: reduce) {
