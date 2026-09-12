@@ -32,6 +32,11 @@ export const metadata: Metadata = {
   title: "Giftshop Chuyên Biên Hòa",
   description:
     "Quà tặng lưu niệm Chuyên Biên Hòa - Mang dấu ấn Chuyên Biên Hòa đến mọi nơi bạn đi!",
+  icons: {
+    icon: "/images/logo.png",
+    shortcut: "/images/logo.png",
+    apple: "/images/logo.png",
+  },
 };
 
 export default function RootLayout({
