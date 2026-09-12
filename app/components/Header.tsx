@@ -135,7 +135,11 @@ export default function Header() {
         <div className="flex shrink-0 items-center gap-5">
           <a
             href="/cart"
-            className="relative flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-green-600"
+            className={`relative flex items-center gap-2 text-sm font-medium transition-colors ${
+              pathname === "/cart"
+                ? "text-green-600"
+                : "text-slate-700 hover:text-green-600"
+            }`}
           >
             <span className="relative">
               <ShoppingCart className="h-5 w-5" />
