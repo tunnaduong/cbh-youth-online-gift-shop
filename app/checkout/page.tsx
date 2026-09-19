@@ -8,12 +8,13 @@ import PaymentMethodSelector, {
   type PaymentMethod,
 } from "../components/PaymentMethodSelector";
 import { useAuth } from "../contexts/AuthContext";
-import { useCart } from "../contexts/CartContext";
+import { cartItemKey, cartItemPrice, useCart } from "../contexts/CartContext";
 import { getLoginUrl } from "../lib/auth";
 import {
   cancelShopOrder,
   createShopOrder,
   getOrderPaymentStatus,
+  variantLabel,
   type QrPayment,
   type ShopOrder,
 } from "../lib/shop";
@@ -69,7 +70,11 @@ export default function CheckoutPage() {
 
   const placeOrder = async (method: PaymentMethod) => {
     const res = await createShopOrder({
-      items: items.map((i) => ({ product_id: i.product.id, quantity: i.quantity })),
+      items: items.map((i) => ({
+        product_id: i.product.id,
+        variant_id: i.variant?.id ?? null,
+        quantity: i.quantity,
+      })),
       shipping_address: shippingAddress.trim(),
       phone: phone.trim(),
       note: note.trim() || undefined,
@@ -214,16 +219,20 @@ export default function CheckoutPage() {
                 <p className="text-sm text-slate-400">Giỏ hàng đang trống.</p>
               ) : (
                 <div className="flex flex-col gap-2">
-                  {items.map(({ product, quantity }) => (
+                  {items.map((item) => (
                     <div
-                      key={product.id}
+                      key={cartItemKey(item)}
                       className="flex items-center justify-between text-sm"
                     >
                       <span className="text-slate-600">
-                        {product.name} <span className="text-slate-400">x{quantity}</span>
+                        {item.product.name}
+                        {item.variant && (
+                          <span className="text-slate-400"> ({variantLabel(item.variant, item.product.options)})</span>
+                        )}{" "}
+                        <span className="text-slate-400">x{item.quantity}</span>
                       </span>
                       <span className="font-medium text-slate-800">
-                        {(product.price * quantity).toLocaleString("vi-VN")}đ
+                        {(cartItemPrice(item) * item.quantity).toLocaleString("vi-VN")}đ
                       </span>
                     </div>
                   ))}

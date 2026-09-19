@@ -5,7 +5,8 @@ import { Minus, Plus, X } from "lucide-react";
 import ProductThumb from "./ProductThumb";
 import { getIconForSlug } from "../lib/categoryIcons";
 import type { CartItem } from "../contexts/CartContext";
-import { useCart } from "../contexts/CartContext";
+import { cartItemKey, cartItemPrice, cartItemStock, useCart } from "../contexts/CartContext";
+import { variantLabel } from "../lib/shop";
 
 // Shared between the compact MiniCart preview (editable=false) and the full
 // /cart page (editable=true) so the two stay visually consistent.
@@ -17,14 +18,15 @@ export default function CartLineItem({
   editable?: boolean;
 }) {
   const { setQuantity, removeItem } = useCart();
-  const { product, quantity } = item;
+  const { product, variant, quantity } = item;
+  const key = cartItemKey(item);
 
   return (
     <div className="flex items-center gap-3">
       <Link href={`/product/${product.id}`} className="shrink-0">
         <ProductThumb
           icon={getIconForSlug(product.category?.slug)}
-          imageUrl={product.image_url}
+          imageUrl={variant?.image_url || product.image_url}
           alt={product.name}
           className={editable ? "h-16 w-16 rounded-xl" : "h-12 w-12 rounded-xl"}
         />
@@ -35,8 +37,11 @@ export default function CartLineItem({
             {product.name}
           </p>
         </Link>
+        {variant && (
+          <p className="truncate text-xs text-slate-500">{variantLabel(variant, product.options)}</p>
+        )}
         <p className="text-sm font-semibold text-green-600">
-          {product.price.toLocaleString("vi-VN")}đ
+          {cartItemPrice(item).toLocaleString("vi-VN")}đ
         </p>
       </div>
 
@@ -45,7 +50,7 @@ export default function CartLineItem({
           <div className="flex items-center gap-1 rounded-full border border-slate-200 px-1 py-1">
             <button
               type="button"
-              onClick={() => setQuantity(product.id, quantity - 1)}
+              onClick={() => setQuantity(key, quantity - 1)}
               className="flex h-6 w-6 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
               aria-label="Giảm số lượng"
             >
@@ -56,8 +61,8 @@ export default function CartLineItem({
             </span>
             <button
               type="button"
-              onClick={() => setQuantity(product.id, quantity + 1)}
-              disabled={quantity >= product.stock}
+              onClick={() => setQuantity(key, quantity + 1)}
+              disabled={quantity >= cartItemStock(item)}
               className="flex h-6 w-6 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-300"
               aria-label="Tăng số lượng"
             >
@@ -66,7 +71,7 @@ export default function CartLineItem({
           </div>
           <button
             type="button"
-            onClick={() => removeItem(product.id)}
+            onClick={() => removeItem(key)}
             className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-red-50 hover:text-red-500"
             aria-label="Xóa khỏi giỏ hàng"
           >

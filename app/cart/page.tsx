@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import Header from "../components/Header";
+import { cartItemKey } from "../contexts/CartContext";
 import CartLineItem from "../components/CartLineItem";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
@@ -52,7 +53,7 @@ export default function CartPage() {
             <div className="rounded-2xl border border-slate-200 bg-white p-5">
               <div className="flex flex-col gap-5">
                 {items.map((item) => (
-                  <CartLineItem key={item.product.id} item={item} editable />
+                  <CartLineItem key={cartItemKey(item)} item={item} editable />
                 ))}
               </div>
 

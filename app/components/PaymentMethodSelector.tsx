@@ -3,10 +3,8 @@
 import { useState } from "react";
 import { Banknote, Coins, QrCode } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { vndToPoints } from "../lib/shop";
 
-// Same conversion the backend uses (PointsService::convertVNDToPoints) and
-// the mobile wallet deposit screen shows - 100đ per point.
-const POINTS_PER_VND = 100;
 
 export type PaymentMethod = "points" | "qr" | "cod";
 
@@ -52,7 +50,7 @@ export default function PaymentMethodSelector({
   const [selected, setSelected] = useState<PaymentMethod>("qr");
 
   const pointsBalance = user?.total_points ?? 0;
-  const pointsNeeded = Math.ceil(amountVnd / POINTS_PER_VND);
+  const pointsNeeded = vndToPoints(amountVnd);
   const hasEnoughPoints = pointsBalance >= pointsNeeded;
 
   return (

@@ -9,20 +9,27 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { ShopProduct } from "../lib/shop";
+import type { ShopProduct, ShopProductVariant } from "../lib/shop";
 
 export interface CartItem {
   product: ShopProduct;
+  variant?: ShopProductVariant | null;
   quantity: number;
 }
+
+/** Same product in two variants = two cart lines. */
+export const cartItemKey = (i: { product: ShopProduct; variant?: ShopProductVariant | null }) =>
+  `${i.product.id}:${i.variant?.id ?? 0}`;
+export const cartItemPrice = (i: CartItem) => i.variant?.price ?? i.product.price;
+export const cartItemStock = (i: CartItem) => i.variant?.stock ?? i.product.stock;
 
 interface CartContextValue {
   items: CartItem[];
   totalQuantity: number;
   totalAmount: number;
-  addItem: (product: ShopProduct, quantity?: number) => void;
-  removeItem: (productId: number) => void;
-  setQuantity: (productId: number, quantity: number) => void;
+  addItem: (product: ShopProduct, quantity?: number, variant?: ShopProductVariant | null) => void;
+  removeItem: (key: string) => void;
+  setQuantity: (key: string, quantity: number) => void;
   clear: () => void;
 }
 
@@ -59,30 +66,30 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items, hydrated]);
 
-  const addItem = useCallback((product: ShopProduct, quantity = 1) => {
-    setItems((prev) => {
-      const existing = prev.find((i) => i.product.id === product.id);
-      if (existing) {
-        return prev.map((i) =>
-          i.product.id === product.id
-            ? { ...i, quantity: i.quantity + quantity }
-            : i
-        );
-      }
-      return [...prev, { product, quantity }];
-    });
+  const addItem = useCallback(
+    (product: ShopProduct, quantity = 1, variant: ShopProductVariant | null = null) => {
+      const key = cartItemKey({ product, variant });
+      setItems((prev) => {
+        const existing = prev.find((i) => cartItemKey(i) === key);
+        if (existing) {
+          return prev.map((i) =>
+            cartItemKey(i) === key ? { ...i, quantity: i.quantity + quantity } : i
+          );
+        }
+        return [...prev, { product, variant, quantity }];
+      });
+    },
+    []
+  );
+
+  const removeItem = useCallback((key: string) => {
+    setItems((prev) => prev.filter((i) => cartItemKey(i) !== key));
   }, []);
 
-  const removeItem = useCallback((productId: number) => {
-    setItems((prev) => prev.filter((i) => i.product.id !== productId));
-  }, []);
-
-  const setQuantity = useCallback((productId: number, quantity: number) => {
+  const setQuantity = useCallback((key: string, quantity: number) => {
     setItems((prev) => {
-      if (quantity <= 0) return prev.filter((i) => i.product.id !== productId);
-      return prev.map((i) =>
-        i.product.id === productId ? { ...i, quantity } : i
-      );
+      if (quantity <= 0) return prev.filter((i) => cartItemKey(i) !== key);
+      return prev.map((i) => (cartItemKey(i) === key ? { ...i, quantity } : i));
     });
   }, []);
 
@@ -93,7 +100,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [items]
   );
   const totalAmount = useMemo(
-    () => items.reduce((sum, i) => sum + i.product.price * i.quantity, 0),
+    () => items.reduce((sum, i) => sum + cartItemPrice(i) * i.quantity, 0),
     [items]
   );
 

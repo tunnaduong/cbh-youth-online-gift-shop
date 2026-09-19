@@ -1,6 +1,7 @@
 "use client";
 
 import { ShoppingCart } from "lucide-react";
+import { cartItemKey } from "../../contexts/CartContext";
 import CartLineItem from "../CartLineItem";
 import { useCart } from "../../contexts/CartContext";
 
@@ -24,7 +25,7 @@ export default function MiniCart() {
       ) : (
         <div className="flex flex-col gap-3">
           {items.map((item) => (
-            <CartLineItem key={item.product.id} item={item} />
+            <CartLineItem key={cartItemKey(item)} item={item} />
           ))}
         </div>
       )}

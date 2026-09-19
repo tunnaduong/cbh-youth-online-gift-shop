@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Star, ShoppingCart } from "lucide-react";
 import ProductThumb from "./ProductThumb";
-import { getShopProducts, type ShopProduct } from "../lib/shop";
+import { getShopProducts, vndToPoints, type ShopProduct } from "../lib/shop";
 import { getIconForSlug } from "../lib/categoryIcons";
 import { useCatalog } from "../contexts/CatalogContext";
 import { useCart } from "../contexts/CartContext";
@@ -76,7 +76,10 @@ export default function FeaturedProducts() {
                   </p>
                 </Link>
                 <p className="mt-1.5 font-bold text-green-600">
-                  {product.price.toLocaleString("vi-VN")}đ
+                  {product.price.toLocaleString("vi-VN")}đ{" "}
+                  <span className="text-xs font-medium text-slate-400">
+                    · {vndToPoints(product.price).toLocaleString("vi-VN")} điểm
+                  </span>
                 </p>
                 <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
                   <span className="flex items-center gap-1">
@@ -85,6 +88,14 @@ export default function FeaturedProducts() {
                   </span>
                   <span>{product.stock} còn lại</span>
                 </div>
+                {product.variants_count ? (
+                  <Link
+                    href={`/product/${product.id}`}
+                    className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-green-600 py-2 text-xs font-semibold text-white transition-colors hover:bg-green-700"
+                  >
+                    Chọn phân loại
+                  </Link>
+                ) : (
                 <button
                   onClick={() => addItem(product)}
                   disabled={product.stock <= 0}
@@ -93,6 +104,7 @@ export default function FeaturedProducts() {
                   <ShoppingCart className="h-3.5 w-3.5" />
                   Thêm vào giỏ
                 </button>
+                )}
               </div>
             </div>
           ))}

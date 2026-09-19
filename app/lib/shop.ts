@@ -1,6 +1,10 @@
 import { API_URL } from "./api";
 import { getAuthToken } from "./auth";
 
+// Prices are in VND. Same rate as the backend (PointsService::convertVNDToPoints):
+// 1.000đ = 10 điểm.
+export const vndToPoints = (vnd: number) => Math.round((vnd / 1000) * 10);
+
 export interface ShopCategory {
   id: number;
   name: string;
@@ -20,7 +24,37 @@ export interface ShopProduct {
   category_id: number;
   category?: ShopCategory;
   is_active: boolean;
+  // Option groups, e.g. [{ name: "Size", values: ["S", "M"] }]
+  options?: ShopProductOption[] | null;
+  variants?: ShopProductVariant[];
+  variants_count?: number;
 }
+
+export interface ShopProductOption {
+  name: string;
+  values: string[];
+}
+
+export interface ShopProductVariant {
+  id: number;
+  product_id: number;
+  // Chosen value per option group, e.g. { Size: "M", Màu: "Đen" }
+  options: Record<string, string>;
+  sku?: string | null;
+  price: number;
+  stock: number;
+  image_url?: string | null;
+}
+
+/**
+ * "Size: M / Màu: Đen" - same format the backend stores as variant_label. Pass the
+ * product's option groups to keep their order (the API's JSON key order isn't reliable).
+ */
+export const variantLabel = (variant: ShopProductVariant, options?: ShopProductOption[] | null) => {
+  const names = options?.map((o) => o.name).filter((n) => n in variant.options) ?? [];
+  for (const n of Object.keys(variant.options)) if (!names.includes(n)) names.push(n);
+  return names.map((n) => `${n}: ${variant.options[n]}`).join(" / ");
+};
 
 interface Paginated<T> {
   data: T[];
@@ -34,6 +68,8 @@ export type PaymentMethod = "points" | "qr" | "cod";
 export interface ShopOrderItem {
   id: number;
   product_id: number;
+  variant_id?: number | null;
+  variant_label?: string | null;
   quantity: number;
   price: number;
   product?: ShopProduct;
@@ -120,7 +156,7 @@ export function getMyShopOrders(page?: number): Promise<Paginated<ShopOrder>> {
 }
 
 export interface CreateOrderPayload {
-  items: { product_id: number; quantity: number }[];
+  items: { product_id: number; variant_id?: number | null; quantity: number }[];
   shipping_address: string;
   phone: string;
   note?: string;

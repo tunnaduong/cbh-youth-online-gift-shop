@@ -145,7 +145,10 @@ export default function OrdersPage() {
                         className="flex items-center justify-between text-sm"
                       >
                         <span className="text-slate-600">
-                          {item.product?.name ?? `Sản phẩm #${item.product_id}`}{" "}
+                          {item.product?.name ?? `Sản phẩm #${item.product_id}`}
+                          {item.variant_label && (
+                            <span className="text-slate-400"> ({item.variant_label})</span>
+                          )}{" "}
                           <span className="text-slate-400">x{item.quantity}</span>
                         </span>
                         <span className="font-medium text-slate-800">
