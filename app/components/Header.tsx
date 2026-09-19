@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Search, ShoppingCart, User } from "lucide-react";
+import { Search, ShoppingCart, User, Menu, X } from "lucide-react";
 import Image from "next/image";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
@@ -94,10 +94,20 @@ function SearchBox() {
 export default function Header() {
   const { totalQuantity } = useCart();
   const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-100 bg-white">
-      <div className="mx-auto flex h-[70px] max-w-[1280px] items-center justify-between gap-6 px-6">
+      <div className="mx-auto flex h-[70px] max-w-[1280px] items-center justify-between gap-4 px-4 sm:px-6">
+        {/* Hamburger — mobile only */}
+        <button
+          onClick={() => setMenuOpen((v) => !v)}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-600 hover:bg-slate-100 lg:hidden"
+          aria-label={menuOpen ? "Đóng menu" : "Mở menu"}
+        >
+          {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+
         <Link href="/" className="flex shrink-0 items-center gap-2.5">
           <Image src="/images/logo.png" alt="Giftshop logo" width={36} height={36} className="h-9 w-9" />
           <span className="leading-tight">
@@ -118,9 +128,7 @@ export default function Header() {
                 key={link.label}
                 href={link.href}
                 className={`relative flex items-center gap-1 pb-1 text-sm font-medium transition-colors ${
-                  active
-                    ? "text-green-600"
-                    : "text-slate-600 hover:text-green-600"
+                  active ? "text-green-600" : "text-slate-600 hover:text-green-600"
                 }`}
               >
                 {link.label}
@@ -132,13 +140,11 @@ export default function Header() {
           })}
         </nav>
 
-        <div className="flex shrink-0 items-center gap-5">
+        <div className="flex shrink-0 items-center gap-4">
           <a
             href="/cart"
             className={`relative flex items-center gap-2 text-sm font-medium transition-colors ${
-              pathname === "/cart"
-                ? "text-green-600"
-                : "text-slate-700 hover:text-green-600"
+              pathname === "/cart" ? "text-green-600" : "text-slate-700 hover:text-green-600"
             }`}
           >
             <span className="relative">
@@ -155,6 +161,29 @@ export default function Header() {
           <SettingsMenu />
         </div>
       </div>
+
+      {/* Mobile nav dropdown */}
+      {menuOpen && (
+        <nav className="border-t border-slate-100 bg-white px-4 pb-3 lg:hidden">
+          {navLinks.map((link) => {
+            const active = link.href === pathname;
+            return (
+              <a
+                key={link.label}
+                href={link.href}
+                onClick={() => setMenuOpen(false)}
+                className={`flex items-center gap-2 rounded-xl px-3 py-3 text-sm font-medium transition-colors ${
+                  active
+                    ? "bg-green-50 text-green-700"
+                    : "text-slate-700 hover:bg-slate-50 hover:text-green-700"
+                }`}
+              >
+                {link.label}
+              </a>
+            );
+          })}
+        </nav>
+      )}
     </header>
   );
 }
