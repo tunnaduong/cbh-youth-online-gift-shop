@@ -5,6 +5,7 @@ import "./globals.css";
 import { AuthProvider } from "./contexts/AuthContext";
 import { CartProvider } from "./contexts/CartContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import MobileDrawerTrigger from "./components/MobileDrawerTrigger";
 
 // Runs before paint so the page never flashes the wrong theme: reads the
 // same localStorage key ThemeContext writes to, falling back to the OS
@@ -58,7 +59,10 @@ export default function RootLayout({
         />
         <ThemeProvider>
           <AuthProvider>
-            <CartProvider>{children}</CartProvider>
+            <CartProvider>
+              {children}
+              <MobileDrawerTrigger />
+            </CartProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>
