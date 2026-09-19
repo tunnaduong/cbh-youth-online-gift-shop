@@ -1,8 +1,6 @@
 "use client";
 
-import { Lock } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import { getLoginUrl } from "../lib/auth";
 
 /**
  * Giftshop is members-only - only logged-in CBH Youth Online accounts can
@@ -11,7 +9,7 @@ import { getLoginUrl } from "../lib/auth";
  * see ../lib/auth) to get past it.
  */
 export default function HomeGate({ children }: { children: React.ReactNode }) {
-  const { loading, loggedIn } = useAuth();
+  const { loading } = useAuth();
 
   if (loading) {
     return (
@@ -21,39 +19,5 @@ export default function HomeGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (loggedIn) {
-    return <>{children}</>;
-  }
-
-  return (
-    <div className="relative">
-      <div
-        aria-hidden
-        className="pointer-events-none select-none opacity-40 blur-[1px]"
-      >
-        {children}
-      </div>
-
-      <div className="pointer-events-none absolute inset-0 flex items-start justify-center pt-16 sm:pt-28">
-        <div className="pointer-events-auto mx-6 flex max-w-sm flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white/95 p-8 text-center shadow-xl backdrop-blur">
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-green-50 text-green-600">
-            <Lock className="h-6 w-6" />
-          </span>
-          <h2 className="text-lg font-bold text-slate-800">
-            Đây là bản xem trước
-          </h2>
-          <p className="text-sm text-slate-500">
-            Đăng nhập bằng tài khoản Chuyên Biên Hòa để xem và mua sắm tại
-            Giftshop.
-          </p>
-          <a
-            href={getLoginUrl()}
-            className="mt-2 w-full rounded-xl bg-green-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-700"
-          >
-            Đăng nhập để tiếp tục
-          </a>
-        </div>
-      </div>
-    </div>
-  );
+  return <>{children}</>;
 }
