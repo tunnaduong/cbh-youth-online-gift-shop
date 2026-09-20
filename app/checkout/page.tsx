@@ -25,9 +25,12 @@ const METHOD_LABEL: Record<PaymentMethod, string> = {
   cod: "thanh toán khi nhận hàng (COD)",
 };
 
+const SHIPPING_FEE = 15000;
+
 export default function CheckoutPage() {
   const { loading, loggedIn } = useAuth();
   const { items, totalAmount, clear } = useCart();
+  const grandTotal = totalAmount + SHIPPING_FEE;
 
   const [shippingAddress, setShippingAddress] = useState("");
   const [phone, setPhone] = useState("");
@@ -239,12 +242,16 @@ export default function CheckoutPage() {
                 </div>
               )}
               <div className="my-3 border-t border-slate-100" />
+              <div className="flex items-center justify-between text-sm mb-2">
+                <span className="text-slate-500">Phí vận chuyển</span>
+                <span className="font-medium text-slate-800">{SHIPPING_FEE.toLocaleString("vi-VN")}đ</span>
+              </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="font-semibold text-slate-700">
                   Tổng cộng
                 </span>
                 <span className="text-base font-extrabold text-green-600">
-                  {totalAmount.toLocaleString("vi-VN")}đ
+                  {grandTotal.toLocaleString("vi-VN")}đ
                 </span>
               </div>
             </div>
@@ -285,7 +292,7 @@ export default function CheckoutPage() {
                   <p className="mb-3 text-sm font-medium text-red-500">{formError}</p>
                 )}
                 <PaymentMethodSelector
-                  amountVnd={totalAmount}
+                  amountVnd={grandTotal}
                   onConfirm={handleConfirm}
                   confirming={submitting}
                 />
