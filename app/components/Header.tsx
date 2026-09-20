@@ -61,18 +61,18 @@ function AccountLink() {
   );
 }
 
-function SearchBox() {
+function SearchBox({ className }: { className?: string }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = query.trim();
-    router.push(trimmed ? `/?search=${encodeURIComponent(trimmed)}#catalog` : "/#catalog");
+    router.push(trimmed ? `/products?search=${encodeURIComponent(trimmed)}` : "/products");
   };
 
   return (
-    <form onSubmit={handleSubmit} className="relative hidden max-w-xs flex-1 md:block">
+    <form onSubmit={handleSubmit} className={`relative ${className ?? ""}`}>
       <input
         type="text"
         value={query}
@@ -95,6 +95,7 @@ export default function Header() {
   const { totalQuantity } = useCart();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-100 bg-white">
@@ -118,7 +119,7 @@ export default function Header() {
           </span>
         </Link>
 
-        <SearchBox />
+        <SearchBox className="hidden max-w-xs flex-1 md:block" />
 
         <nav className="hidden items-center gap-7 lg:flex">
           {navLinks.map((link) => {
@@ -141,6 +142,14 @@ export default function Header() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-4">
+          {/* Mobile search toggle */}
+          <button
+            onClick={() => setMobileSearchOpen((v) => !v)}
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-600 hover:bg-slate-100 md:hidden"
+            aria-label="Tìm kiếm"
+          >
+            <Search className="h-5 w-5" />
+          </button>
           <a
             href="/cart"
             className={`relative flex items-center gap-2 text-sm font-medium transition-colors ${
@@ -161,6 +170,13 @@ export default function Header() {
           <SettingsMenu />
         </div>
       </div>
+
+      {/* Mobile search bar */}
+      {mobileSearchOpen && (
+        <div className="border-t border-slate-100 bg-white px-4 py-3 md:hidden">
+          <SearchBox className="w-full" />
+        </div>
+      )}
 
       {/* Mobile nav dropdown */}
       {menuOpen && (
