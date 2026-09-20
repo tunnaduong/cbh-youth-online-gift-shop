@@ -50,3 +50,22 @@ export async function getCurrentUser(): Promise<CbhUser | null> {
 export function getAvatarUrl(username: string): string {
   return `${API_URL}/v1.0/users/${username}/avatar`;
 }
+
+export async function getStudentVerificationStatus(): Promise<{ is_verified: boolean; discount_percent: number } | null> {
+  const token = getAuthToken();
+  if (!token) return null;
+
+  try {
+    const res = await fetch(`${API_URL}/v1.0/student-verification/status`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}

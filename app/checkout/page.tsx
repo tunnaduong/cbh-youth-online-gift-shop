@@ -10,6 +10,7 @@ import PaymentMethodSelector, {
 import { useAuth } from "../contexts/AuthContext";
 import { cartItemKey, cartItemPrice, useCart } from "../contexts/CartContext";
 import { getLoginUrl } from "../lib/auth";
+import { getStudentVerificationStatus } from "../lib/api";
 import {
   cancelShopOrder,
   createShopOrder,
@@ -30,7 +31,16 @@ const SHIPPING_FEE = 15000;
 export default function CheckoutPage() {
   const { loading, loggedIn } = useAuth();
   const { items, totalAmount, clear } = useCart();
-  const grandTotal = totalAmount + SHIPPING_FEE;
+  const [studentDiscount, setStudentDiscount] = useState(0);
+
+  useEffect(() => {
+    getStudentVerificationStatus().then((s) => {
+      if (s?.is_verified) setStudentDiscount(s.discount_percent || 10);
+    });
+  }, []);
+
+  const discountedAmount = studentDiscount > 0 ? Math.round(totalAmount * (1 - studentDiscount / 100)) : totalAmount;
+  const grandTotal = discountedAmount + SHIPPING_FEE;
 
   const [shippingAddress, setShippingAddress] = useState("");
   const [phone, setPhone] = useState("");
@@ -242,6 +252,12 @@ export default function CheckoutPage() {
                 </div>
               )}
               <div className="my-3 border-t border-slate-100" />
+              {studentDiscount > 0 && (
+                <div className="flex items-center justify-between text-sm mb-2">
+                  <span className="text-green-600 font-medium">Giảm giá học sinh ({studentDiscount}%)</span>
+                  <span className="font-medium text-green-600">-{(totalAmount - discountedAmount).toLocaleString("vi-VN")}đ</span>
+                </div>
+              )}
               <div className="flex items-center justify-between text-sm mb-2">
                 <span className="text-slate-500">Phí vận chuyển</span>
                 <span className="font-medium text-slate-800">{SHIPPING_FEE.toLocaleString("vi-VN")}đ</span>
