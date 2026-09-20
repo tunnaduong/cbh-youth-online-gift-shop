@@ -1,4 +1,5 @@
 import { Gift } from "lucide-react";
+import Link from "next/link";
 
 export default function PromoBanner() {
   return (
@@ -9,9 +10,12 @@ export default function PromoBanner() {
         <p className="mt-1.5 text-sm text-green-50/90">
           Giảm 10% cho tất cả sản phẩm khi xác minh tài khoản học sinh
         </p>
-        <button className="mt-4 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-green-600 transition-colors hover:bg-green-50">
+        <Link
+          href="https://chuyenbienhoa.com/settings?tab=student-kyc"
+          className="mt-4 inline-block rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-green-600 transition-colors hover:bg-green-50"
+        >
           Xác minh ngay
-        </button>
+        </Link>
       </div>
     </div>
   );
