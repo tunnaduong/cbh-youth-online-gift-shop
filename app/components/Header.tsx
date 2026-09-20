@@ -13,7 +13,7 @@ import SettingsMenu from "./SettingsMenu";
 
 const navLinks = [
   { label: "Trang chủ", href: "/" },
-  { label: "Sản phẩm", href: "/#catalog" },
+  { label: "Sản phẩm", href: "/products" },
   { label: "Đơn hàng của tôi", href: "/orders" },
 ];
 
