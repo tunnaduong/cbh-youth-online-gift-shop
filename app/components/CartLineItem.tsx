@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Minus, Plus, X } from "lucide-react";
 import ProductThumb from "./ProductThumb";
+import Price from "./Price";
 import { getIconForSlug } from "../lib/categoryIcons";
 import type { CartItem } from "../contexts/CartContext";
 import { cartItemKey, cartItemPrice, cartItemStock, useCart } from "../contexts/CartContext";
@@ -41,7 +42,7 @@ export default function CartLineItem({
           <p className="truncate text-xs text-slate-500">{variantLabel(variant, product.options)}</p>
         )}
         <p className="text-sm font-semibold text-green-600">
-          {cartItemPrice(item).toLocaleString("vi-VN")}đ
+          <Price amount={cartItemPrice(item)} />
         </p>
       </div>
 

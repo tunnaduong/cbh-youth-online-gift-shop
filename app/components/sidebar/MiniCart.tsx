@@ -3,6 +3,7 @@
 import { ShoppingCart } from "lucide-react";
 import { cartItemKey } from "../../contexts/CartContext";
 import CartLineItem from "../CartLineItem";
+import Price from "../Price";
 import { useCart } from "../../contexts/CartContext";
 
 export default function MiniCart() {
@@ -35,7 +36,7 @@ export default function MiniCart() {
       <div className="flex items-center justify-between text-sm">
         <span className="text-slate-500">Tạm tính:</span>
         <span className="font-bold text-green-600">
-          {totalAmount.toLocaleString("vi-VN")}đ
+          <Price amount={totalAmount} />
         </span>
       </div>
 

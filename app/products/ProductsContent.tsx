@@ -6,11 +6,11 @@ import Link from "next/link";
 import { Search, ShoppingCart, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
 import Header from "../components/Header";
 import ProductThumb from "../components/ProductThumb";
+import Price from "../components/Price";
 import { getIconForSlug, AllCategoriesIcon } from "../lib/categoryIcons";
 import {
   getShopCategories,
   getShopProducts,
-  vndToPoints,
   type ShopCategory,
   type ShopProduct,
 } from "../lib/shop";
@@ -257,11 +257,8 @@ function ProductCard({ product, onAdd }: { product: ShopProduct; onAdd: () => vo
             {product.name}
           </p>
         </Link>
-        <p className="mt-1.5 font-bold text-green-600">
-          {product.price.toLocaleString("vi-VN")}đ{" "}
-          <span className="text-xs font-medium text-slate-400">
-            · {vndToPoints(product.price).toLocaleString("vi-VN")} điểm
-          </span>
+        <p className="mt-1.5">
+          <Price amount={product.price} showPoints />
         </p>
         <p className="mt-1 text-xs text-slate-400">{product.stock} còn lại</p>
 

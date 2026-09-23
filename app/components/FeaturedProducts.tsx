@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Star, ShoppingCart } from "lucide-react";
 import ProductThumb from "./ProductThumb";
-import { getShopProducts, vndToPoints, type ShopProduct } from "../lib/shop";
+import Price from "./Price";
+import { getShopProducts, type ShopProduct } from "../lib/shop";
 import { getIconForSlug } from "../lib/categoryIcons";
 import { useCatalog } from "../contexts/CatalogContext";
 import { useCart } from "../contexts/CartContext";
@@ -75,11 +76,8 @@ export default function FeaturedProducts() {
                     {product.name}
                   </p>
                 </Link>
-                <p className="mt-1.5 font-bold text-green-600">
-                  {product.price.toLocaleString("vi-VN")}đ{" "}
-                  <span className="text-xs font-medium text-slate-400">
-                    · {vndToPoints(product.price).toLocaleString("vi-VN")} điểm
-                  </span>
+                <p className="mt-1.5">
+                  <Price amount={product.price} showPoints />
                 </p>
                 <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
                   <span className="flex items-center gap-1">

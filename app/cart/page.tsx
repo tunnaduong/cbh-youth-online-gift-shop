@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import Header from "../components/Header";
+import Price from "../components/Price";
 import { cartItemKey } from "../contexts/CartContext";
 import CartLineItem from "../components/CartLineItem";
 import { useAuth } from "../contexts/AuthContext";
@@ -64,7 +65,7 @@ export default function CartPage() {
                   Tổng cộng
                 </span>
                 <span className="text-lg font-extrabold text-green-600">
-                  {totalAmount.toLocaleString("vi-VN")}đ
+                  <Price amount={totalAmount} />
                 </span>
               </div>
             </div>

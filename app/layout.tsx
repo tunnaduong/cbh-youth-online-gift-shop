@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import { AuthProvider } from "./contexts/AuthContext";
 import { CartProvider } from "./contexts/CartContext";
+import { StudentDiscountProvider } from "./contexts/StudentDiscountContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import MobileDrawerTrigger from "./components/MobileDrawerTrigger";
 
@@ -59,10 +60,12 @@ export default function RootLayout({
         />
         <ThemeProvider>
           <AuthProvider>
-            <CartProvider>
-              {children}
-              <MobileDrawerTrigger />
-            </CartProvider>
+            <StudentDiscountProvider>
+              <CartProvider>
+                {children}
+                <MobileDrawerTrigger />
+              </CartProvider>
+            </StudentDiscountProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

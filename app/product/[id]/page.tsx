@@ -6,9 +6,11 @@ import Link from "next/link";
 import { ChevronRight, Minus, Plus, ShoppingCart, Package, Tag, CheckCircle2 } from "lucide-react";
 import Header from "../../components/Header";
 import ProductThumb from "../../components/ProductThumb";
+import Price from "../../components/Price";
 import { getIconForSlug } from "../../lib/categoryIcons";
 import { getShopProduct, getShopProducts, vndToPoints, type ShopProduct } from "../../lib/shop";
 import { useCart } from "../../contexts/CartContext";
+import { useStudentDiscount } from "../../contexts/StudentDiscountContext";
 
 export default function ProductDetailPage({
   params,
@@ -17,6 +19,7 @@ export default function ProductDetailPage({
 }) {
   const { id } = use(params);
   const { addItem } = useCart();
+  const { discounted } = useStudentDiscount();
   const [product, setProduct] = useState<ShopProduct | null>(null);
   const [related, setRelated] = useState<ShopProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -144,14 +147,18 @@ export default function ProductDetailPage({
                 </h1>
 
                 <div className="mt-4 rounded-2xl bg-green-50 px-5 py-4">
-                  <p className="text-2xl font-bold text-green-700">
-                    {!variant && maxPrice > minPrice
-                      ? `${minPrice.toLocaleString("vi-VN")}đ – ${maxPrice.toLocaleString("vi-VN")}đ`
-                      : `${price.toLocaleString("vi-VN")}đ`}
-                  </p>
+                  {!variant && maxPrice > minPrice ? (
+                    <div className="flex flex-wrap items-baseline gap-x-2">
+                      <Price amount={minPrice} size="lg" />
+                      <span className="text-2xl font-bold text-green-700">–</span>
+                      <Price amount={maxPrice} size="lg" />
+                    </div>
+                  ) : (
+                    <Price amount={price} size="lg" />
+                  )}
                   <p className="mt-0.5 text-sm text-green-600/80">
                     {!variant && maxPrice > minPrice ? "từ " : ""}
-                    {vndToPoints(price).toLocaleString("vi-VN")} điểm
+                    {vndToPoints(discounted(price)).toLocaleString("vi-VN")} điểm
                   </p>
                 </div>
 
@@ -273,8 +280,8 @@ export default function ProductDetailPage({
                         <p className="line-clamp-2 text-sm font-semibold text-slate-800 group-hover:text-green-700">
                           {p.name}
                         </p>
-                        <p className="mt-1 text-sm font-bold text-green-600">
-                          {p.price.toLocaleString("vi-VN")}đ
+                        <p className="mt-1 text-sm">
+                          <Price amount={p.price} />
                         </p>
                       </div>
                     </Link>
