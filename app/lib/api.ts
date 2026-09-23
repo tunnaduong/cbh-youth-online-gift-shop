@@ -64,7 +64,10 @@ export async function getStudentVerificationStatus(): Promise<{ is_verified: boo
       cache: "no-store",
     });
     if (!res.ok) return null;
-    return await res.json();
+    // The API wraps some payloads in { data: ... } and returns others flat -
+    // getCurrentUser unwraps the same way.
+    const json = await res.json();
+    return json?.data ?? json;
   } catch {
     return null;
   }
