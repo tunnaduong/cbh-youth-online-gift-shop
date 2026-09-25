@@ -3,14 +3,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { use } from "react";
 import Link from "next/link";
-import { ChevronRight, Minus, Plus, ShoppingCart, Package, Tag, CheckCircle2 } from "lucide-react";
+import { ChevronRight, Minus, Plus, ShoppingCart, Package, Tag, CheckCircle2, MessageCircle } from "lucide-react";
 import Header from "../../components/Header";
 import ProductThumb from "../../components/ProductThumb";
 import Price from "../../components/Price";
 import { getIconForSlug } from "../../lib/categoryIcons";
-import { getShopProduct, getShopProducts, vndToPoints, type ShopProduct } from "../../lib/shop";
+import { contactShop, getShopProduct, getShopProducts, vndToPoints, type ShopProduct } from "../../lib/shop";
 import { useCart } from "../../contexts/CartContext";
 import { useStudentDiscount } from "../../contexts/StudentDiscountContext";
+import { useAuth } from "../../contexts/AuthContext";
+import { useChatWidget } from "../../contexts/ChatWidgetContext";
+import { getLoginUrl } from "../../lib/auth";
 
 export default function ProductDetailPage({
   params,
@@ -20,6 +23,8 @@ export default function ProductDetailPage({
   const { id } = use(params);
   const { addItem } = useCart();
   const { discounted } = useStudentDiscount();
+  const { loggedIn } = useAuth();
+  const { openChat } = useChatWidget();
   const [product, setProduct] = useState<ShopProduct | null>(null);
   const [related, setRelated] = useState<ShopProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,6 +32,7 @@ export default function ProductDetailPage({
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
   const [selected, setSelected] = useState<Record<string, string>>({});
+  const [contacting, setContacting] = useState(false);
 
   const options = useMemo(() => product?.options ?? [], [product]);
   const variants = useMemo(() => product?.variants ?? [], [product]);
@@ -79,6 +85,23 @@ export default function ProductDetailPage({
     addItem(product, quantity, variant);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
+  };
+
+  const handleContactShop = async () => {
+    if (!product) return;
+    if (!loggedIn) {
+      window.location.href = getLoginUrl();
+      return;
+    }
+    setContacting(true);
+    try {
+      const { conversation_id } = await contactShop(product.id);
+      openChat(conversation_id);
+    } catch (error) {
+      console.error("Failed to contact shop:", error);
+    } finally {
+      setContacting(false);
+    }
   };
 
   return (
@@ -247,6 +270,16 @@ export default function ProductDetailPage({
                       : hasVariants && !variant
                         ? "Chọn phân loại"
                         : "Thêm vào giỏ hàng"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleContactShop}
+                    disabled={contacting}
+                    className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-green-600/40 hover:text-green-700 disabled:cursor-not-allowed disabled:text-slate-400"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    <span>{contacting ? "Đang kết nối..." : "Nhắn tin"}</span>
                   </button>
                 </div>
 
