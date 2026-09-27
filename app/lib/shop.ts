@@ -194,3 +194,25 @@ export function cancelShopOrder(orderId: number): Promise<{ message: string; ord
 export function getOrderPaymentStatus(orderId: number): Promise<PaymentStatusResponse> {
   return shopFetch<PaymentStatusResponse>(`/shop/orders/${orderId}/payment-status`, {}, true);
 }
+
+/**
+ * Posts an inquiry about a product into the customer's shop-support thread
+ * (a group chat shared with every shop admin - see ShopController::contactShop
+ * on the backend), creating that thread on first contact and reusing it
+ * afterwards. `admins_online` reflects the same "active in the last 5
+ * minutes" window as getSupportStatus(), at the moment of contact.
+ */
+export function contactShop(
+  productId: number
+): Promise<{ conversation_id: number; admins_online: number }> {
+  return shopFetch<{ conversation_id: number; admins_online: number }>(
+    `/shop/products/${productId}/contact`,
+    { method: "POST" },
+    true
+  );
+}
+
+/** Live admin online/offline indicator for the chat widget - see ShopController::supportStatus. */
+export function getSupportStatus(): Promise<{ admins_online: number }> {
+  return shopFetch<{ admins_online: number }>("/shop/support/status", {}, true);
+}

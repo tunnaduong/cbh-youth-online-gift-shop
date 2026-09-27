@@ -4,8 +4,10 @@ import Script from "next/script";
 import "./globals.css";
 import { AuthProvider } from "./contexts/AuthContext";
 import { CartProvider } from "./contexts/CartContext";
+import { ChatWidgetProvider } from "./contexts/ChatWidgetContext";
 import { StudentDiscountProvider } from "./contexts/StudentDiscountContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import ChatWidget from "./components/ChatWidget";
 import MobileDrawerTrigger from "./components/MobileDrawerTrigger";
 
 // Runs before paint so the page never flashes the wrong theme: reads the
@@ -62,8 +64,11 @@ export default function RootLayout({
           <AuthProvider>
             <StudentDiscountProvider>
               <CartProvider>
-                {children}
-                <MobileDrawerTrigger />
+                <ChatWidgetProvider>
+                  {children}
+                  <MobileDrawerTrigger />
+                  <ChatWidget />
+                </ChatWidgetProvider>
               </CartProvider>
             </StudentDiscountProvider>
           </AuthProvider>
