@@ -91,6 +91,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // it), so the effect below doesn't push it straight back.
   const fromServerRef = useRef(false);
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const signedInRef = useRef(false);
   const itemsRef = useRef<CartItem[]>([]);
   itemsRef.current = items;
 
@@ -102,9 +103,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // First load after sign-in (or page load while signed in).
   useEffect(() => {
     if (!hydrated || !userId) {
+      // Signed out: the cart belongs to the account, so it must not stay in
+      // this browser and get merged into whoever signs in next.
+      if (hydrated && signedInRef.current) {
+        signedInRef.current = false;
+        localStorage.removeItem(SYNCED_USER_KEY);
+        setItems([]);
+      }
       setSynced(false);
       return;
     }
+    signedInRef.current = true;
 
     let cancelled = false;
     getServerCart()
