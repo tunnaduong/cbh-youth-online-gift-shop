@@ -2,7 +2,13 @@
 
 import { useEffect } from "react";
 import { API_URL } from "../../lib/api";
-import { setAuthToken } from "../../lib/auth";
+import {
+  clearAuthToken,
+  getAuthToken,
+  isSessionFromApp,
+  markSessionFromApp,
+  setAuthToken,
+} from "../../lib/auth";
 
 /**
  * Landing page for the mobile app's in-app browser. The app can't write
@@ -24,6 +30,25 @@ export default function SetTokenPage() {
         : "/";
 
     (async () => {
+      // ?logout=1: the mobile app has no signed-in account any more, and its
+      // browser mustn't stay signed in either. A session the app handed over
+      // is revoked on the API too; one the user signed into themselves only
+      // loses its cookie here.
+      if (params.get("logout") === "1") {
+        const token = getAuthToken();
+        if (token && isSessionFromApp()) {
+          try {
+            await fetch(`${API_URL}/v1.0/logout`, {
+              method: "POST",
+              headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+            });
+          } catch {}
+        }
+        clearAuthToken();
+        window.location.replace(returnUrl);
+        return;
+      }
+
       if (code) {
         try {
           const res = await fetch(`${API_URL}/v1.0/web-session/redeem`, {
@@ -35,7 +60,21 @@ export default function SetTokenPage() {
             body: JSON.stringify({ code }),
           });
           const data = res.ok ? await res.json() : null;
-          if (data?.token) setAuthToken(data.token);
+          if (data?.token) {
+            // Switching accounts in the app hands over a new session: end the
+            // one it handed over before, so it doesn't linger in the devices
+            // list. Never touches a session the user signed into themselves.
+            const previous = getAuthToken();
+            if (previous && previous !== data.token && isSessionFromApp()) {
+              fetch(`${API_URL}/v1.0/logout`, {
+                method: "POST",
+                headers: { Accept: "application/json", Authorization: `Bearer ${previous}` },
+                keepalive: true,
+              }).catch(() => {});
+            }
+            setAuthToken(data.token);
+            markSessionFromApp();
+          }
         } catch {
           // Expired/used code: carry on with whatever session the browser
           // already has rather than stranding the user on a blank page.

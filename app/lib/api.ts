@@ -1,4 +1,5 @@
 import { getAuthToken } from "./auth";
+import { getClientHeaders } from "./clientInfo";
 
 export const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://api.chuyenbienhoa.com";
@@ -35,6 +36,7 @@ export async function getCurrentUser(): Promise<CbhUser | null> {
       Accept: "application/json",
       "X-From-Frontend": "true",
       Authorization: `Bearer ${token}`,
+      ...getClientHeaders(),
     },
     // Always reflect the current session - never cache a user response.
     cache: "no-store",
@@ -60,6 +62,7 @@ export async function getStudentVerificationStatus(): Promise<{ is_verified: boo
       headers: {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
+        ...getClientHeaders(),
       },
       cache: "no-store",
     });

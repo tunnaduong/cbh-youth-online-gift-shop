@@ -33,8 +33,8 @@ The **CBH Youth Online gift shop**, served at **https://giftshop.chuyenbienhoa.c
 
 ### App mode (`?app=true`): running inside the mobile app's WebView
 - **How the app opens the shop:** the mobile app's `WebAppScreen` loads `https://giftshop.chuyenbienhoa.com/?app=true`.
+- **Login:** the WebView has its own web session: the app opens `/auth/set-token?code=…` once per app login (a new code after an account switch) and `/auth/set-token?logout=1` when the app has no account. Its user agent ends in `CBHYouthApp/<version>`.
 - **Before every page load**, the app injects a script that:
-  - sets the cookie for the current app account, reloading once if the account changed, so app account switches carry over to the web;
   - sets `sessionStorage.cbh_app_mode = "1"`;
   - writes the app's theme (`"light"` or `"dark"`) to `localStorage.giftshop_theme`.
 - **Domain lock:** the WebView only stays on `giftshop.chuyenbienhoa.com`. Any link to another site is cancelled, and the app shows a "Về trang chủ cửa hàng" (back to shop home) page. **Don't add flows that leave this domain**, such as payment redirects or external auth. They won't work inside the app.
@@ -142,6 +142,7 @@ npm run lint         # eslint (eslint-config-next)
 
 | Commit | Change |
 |---|---|
+| (latest) | **App sessions.** `/auth/set-token?logout=1` drops the session (revoking it on the API when the app handed it over); a new handoff revokes the previous app-handed session; `cbh_session_source=app` cookie (shared with the main site) marks app-handed sessions. `lib/clientInfo.ts` sends the same device headers as the main site, labelling WebView sessions ("WebView trong ứng dụng CBH Youth") and app-handed browsers ("· mở từ ứng dụng") in the logged-in devices list. |
 | (this commit) | **Cart sync and support chat fixes (not built or run).** `CartContext`: a local cart is merged into the account only when it was built as a guest (`giftshop_cart_user` unset) - a cart left by another account is replaced by the server's, never merged; signing out (also from another CBH site, since the login cookie is shared) empties a cart that belonged to an account; a change made while the account cart is still loading is saved instead of being overwritten; a pending save is dropped when the user changes. `ChatWidget`: a status poll that started before an AI on/off switch can't undo it; the "Yoyo AI đang trả lời..." line gives up after 45s. |
 | `36a31d5` / `f469ffc` | **Support chat AI switch + cart synced with the account (not built or run: no Node on the machine it was written on).** `ChatWidget` has an "AI" pill: while on, the API answers each customer message with Yoyo AI (product, variant and recent orders are given to it server-side); turning it off calls `PUT /shop/support/{id}/ai` and shows a toast. AI replies carry an "AI" badge and a "Yoyo AI đang trả lời..." line shows while waiting. "Nhắn tin" now sends the picked `variant_id`. `CartContext` loads the account cart after sign-in (a guest cart is merged in once), pushes changes (debounced 600 ms), re-reads it when the tab regains focus, and empties the browser copy on sign-out. |
 | (latest) | **Fix: header and pages fit 360px phones.** The header was about 50px wider than a 360px screen (full logo text + icon row with 16px gaps). Now it uses tighter gaps below `sm`, a logo that shrinks and truncates, `px-4` page gutters below `sm`, `min-w-0` on grid/flex children (home columns, category buttons, breadcrumb) and `overflow-wrap:anywhere` on category labels. |
@@ -158,5 +159,5 @@ npm run lint         # eslint (eslint-config-next)
 
 **Related changes in the other repos, made in the same session:**
 - **API:** added the `web-session/handoff` and `web-session/redeem` endpoints.
-- **Mobile:** a sidebar "Gift shop" entry opens `WebAppScreen` (a WebView with a plain header, domain lock, cookie and theme injection), and links to this domain in the in-app browser go through the `/auth/set-token` handoff.
+- **Mobile:** a sidebar "Gift shop" entry opens `WebAppScreen` (a WebView with a plain header, domain lock, session handoff and theme injection), and links to this domain in the in-app browser go through the `/auth/set-token` handoff.
 - **Main site:** PR #29 (merged) added `/auth/set-token?code=`, app mode for admin, and hides the splash and banner in app mode.

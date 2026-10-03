@@ -40,6 +40,45 @@ export function clearAuthToken(): void {
     ? ".chuyenbienhoa.com"
     : window.location.hostname;
   document.cookie = `${AUTH_COOKIE_NAME}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${domain}`;
+  // Host-only copy too (an older login flow could leave one behind).
+  document.cookie = `${AUTH_COOKIE_NAME}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+  clearSessionSource();
+}
+
+/*
+ * "cbh_session_source=app" marks a session the mobile app handed to this
+ * browser (/auth/set-token?code=), shared with the main site on
+ * .chuyenbienhoa.com. It labels the session "opened from the app" in the
+ * logged-in devices list and lets /auth/set-token?logout=1 revoke it when the
+ * app signs out. Same cookie as the main site's utils/cookies.js.
+ */
+const SESSION_SOURCE_COOKIE = "cbh_session_source";
+
+function sharedDomainAttr(): string {
+  return window.location.hostname.endsWith("chuyenbienhoa.com")
+    ? "; domain=.chuyenbienhoa.com"
+    : "";
+}
+
+export function markSessionFromApp(): void {
+  if (typeof document === "undefined") return;
+  document.cookie =
+    `${SESSION_SOURCE_COOKIE}=app; path=/; max-age=${60 * 60 * 24 * 30}; samesite=lax` +
+    (window.location.protocol === "https:" ? "; secure" : "") +
+    sharedDomainAttr();
+}
+
+export function isSessionFromApp(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.cookie
+    .split(";")
+    .some((c) => c.trim() === `${SESSION_SOURCE_COOKIE}=app`);
+}
+
+export function clearSessionSource(): void {
+  if (typeof document === "undefined") return;
+  document.cookie = `${SESSION_SOURCE_COOKIE}=; path=/; max-age=0${sharedDomainAttr()}`;
+  document.cookie = `${SESSION_SOURCE_COOKIE}=; path=/; max-age=0`;
 }
 
 /**
@@ -62,6 +101,8 @@ export function setAuthToken(token: string): void {
     parts.push("domain=.chuyenbienhoa.com");
   }
   document.cookie = parts.join("; ");
+  // set-token marks it again right after when the app handed it over.
+  clearSessionSource();
 }
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.chuyenbienhoa.com";

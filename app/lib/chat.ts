@@ -1,5 +1,6 @@
 import { API_URL } from "./api";
 import { getAuthToken } from "./auth";
+import { getClientHeaders } from "./clientInfo";
 
 export interface ChatSender {
   id: number | null;
@@ -49,6 +50,7 @@ async function chatFetch<T>(path: string, options: RequestInit = {}): Promise<T>
       Accept: "application/json",
       "X-From-Frontend": "true",
       Authorization: `Bearer ${token}`,
+      ...getClientHeaders(),
       ...(options.headers as Record<string, string> | undefined),
     },
     cache: "no-store",

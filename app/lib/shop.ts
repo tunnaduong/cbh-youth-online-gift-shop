@@ -1,5 +1,6 @@
 import { API_URL } from "./api";
 import { getAuthToken } from "./auth";
+import { getClientHeaders } from "./clientInfo";
 
 // Prices are in VND. Same rate as the backend (PointsService::convertVNDToPoints):
 // 1.000đ = 10 điểm.
@@ -115,6 +116,7 @@ async function shopFetch<T>(
     const token = getAuthToken();
     if (!token) throw new Error("Not logged in");
     headers.Authorization = `Bearer ${token}`;
+    Object.assign(headers, getClientHeaders());
   }
 
   const res = await fetch(`${API_URL}/v1.0${path}`, {
