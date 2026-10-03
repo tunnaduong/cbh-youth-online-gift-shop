@@ -157,4 +157,4 @@ npm run lint         # eslint (eslint-config-next)
 **Related changes in the other repos, made in the same session:**
 - **API:** added the `web-session/handoff` and `web-session/redeem` endpoints.
 - **Mobile:** a sidebar "Gift shop" entry opens `WebAppScreen` (a WebView with a plain header, domain lock, cookie and theme injection), and links to this domain in the in-app browser go through the `/auth/set-token` handoff.
-- **Main site:** PR #29 adds `/auth/set-token?code=`, app mode for admin, and hides the splash and banner in app mode.
+- **Main site:** PR #29 (merged) added `/auth/set-token?code=`, app mode for admin, and hides the splash and banner in app mode.
