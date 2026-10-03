@@ -42,6 +42,28 @@ export function clearAuthToken(): void {
   document.cookie = `${AUTH_COOKIE_NAME}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${domain}`;
 }
 
+/**
+ * Writes the shared auth_token cookie - used only by /auth/set-token, when the
+ * mobile app hands its login over to its in-app browser. Same attributes as
+ * the main site's setAuthCookie, so either site can read or clear it.
+ */
+export function setAuthToken(token: string): void {
+  if (typeof document === "undefined") return;
+  const parts = [
+    `${AUTH_COOKIE_NAME}=${token}`,
+    "path=/",
+    `max-age=${60 * 60 * 24 * 30}`,
+    "samesite=lax",
+  ];
+  if (window.location.protocol === "https:") parts.push("secure");
+  // A browser silently drops a cookie whose domain isn't the current host or
+  // a parent of it, so only scope it to the shared domain when we're on it.
+  if (window.location.hostname.endsWith("chuyenbienhoa.com")) {
+    parts.push("domain=.chuyenbienhoa.com");
+  }
+  document.cookie = parts.join("; ");
+}
+
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.chuyenbienhoa.com";
 
 /**
