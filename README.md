@@ -21,3 +21,5 @@ Biến môi trường (không bắt buộc, đã có giá trị mặc định):
 | `NEXT_PUBLIC_SITE_URL` | `https://www.chuyenbienhoa.com` (trang đăng nhập) |
 
 Trên `localhost`, trình duyệt không gửi cookie của `.chuyenbienhoa.com`, nên khi chạy local bạn sẽ ở trạng thái chưa đăng nhập.
+
+Nhánh mặc định là **`main`**: nếu không có yêu cầu khác, commit và push thẳng lên `main`.
