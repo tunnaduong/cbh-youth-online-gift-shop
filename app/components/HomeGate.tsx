@@ -13,7 +13,7 @@ export default function HomeGate({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="mx-auto flex w-full max-w-[1280px] items-center justify-center px-6 py-24">
+      <div className="mx-auto flex w-full max-w-[1280px] items-center justify-center px-4 sm:px-6 py-24">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-green-600" />
       </div>
     );

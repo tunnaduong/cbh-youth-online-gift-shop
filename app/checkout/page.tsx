@@ -139,7 +139,7 @@ export default function CheckoutPage() {
   return (
     <>
       <Header />
-      <main className="mx-auto w-full max-w-[640px] px-6 py-8">
+      <main className="mx-auto w-full max-w-[640px] px-4 sm:px-6 py-8">
         <h1 className="mb-6 text-2xl font-extrabold text-slate-800">
           Thanh toán
         </h1>

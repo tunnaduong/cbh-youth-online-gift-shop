@@ -107,20 +107,20 @@ export default function ProductDetailPage({
   return (
     <>
       <Header />
-      <main className="mx-auto w-full max-w-[1280px] px-6 py-6">
+      <main className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 py-6">
         {/* Breadcrumb */}
         <nav className="mb-6 flex items-center gap-1 text-sm text-slate-500">
           <Link href="/" className="hover:text-green-700">Trang chủ</Link>
           <ChevronRight className="h-3.5 w-3.5" />
           {product?.category && (
             <>
-              <Link href={`/?category=${product.category.id}`} className="hover:text-green-700">
+              <Link href={`/?category=${product.category.id}`} className="shrink-0 hover:text-green-700">
                 {product.category.name}
               </Link>
               <ChevronRight className="h-3.5 w-3.5" />
             </>
           )}
-          <span className="line-clamp-1 text-slate-700">{product?.name ?? "Sản phẩm"}</span>
+          <span className="line-clamp-1 min-w-0 text-slate-700">{product?.name ?? "Sản phẩm"}</span>
         </nav>
 
         {loading ? (

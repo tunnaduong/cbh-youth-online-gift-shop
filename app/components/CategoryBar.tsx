@@ -62,7 +62,9 @@ function CategoryButton({
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center justify-center gap-2 rounded-2xl border bg-white px-2 py-4 text-center text-xs font-medium transition-all hover:-translate-y-0.5 hover:shadow-md ${
+      // min-w-0 + overflow-wrap: a long category name in a narrow 4-column
+      // cell would otherwise widen its grid cell past the screen edge.
+      className={`flex min-w-0 flex-col items-center justify-center gap-2 rounded-2xl border bg-white px-1.5 py-4 text-center text-xs font-medium [overflow-wrap:anywhere] sm:px-2 transition-all hover:-translate-y-0.5 hover:shadow-md ${
         isActive
           ? "border-green-600/30 text-green-700 shadow-sm"
           : "border-slate-100 text-slate-600"

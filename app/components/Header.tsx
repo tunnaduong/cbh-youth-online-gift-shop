@@ -119,7 +119,11 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-100 bg-white">
-      <div className="mx-auto flex h-[70px] max-w-[1280px] items-center justify-between gap-4 px-4 sm:px-6">
+      {/* Tighter gaps below sm, and a logo that can shrink: at 360px the full
+          logo text plus the icon row came out ~50px wider than the screen,
+          pushing the page sideways (or, with overflow-x clipped, cutting the
+          right-hand icons off). */}
+      <div className="mx-auto flex h-[70px] max-w-[1280px] items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6">
         {/* Hamburger — mobile only */}
         <button
           onClick={() => setMenuOpen((v) => !v)}
@@ -129,11 +133,11 @@ export default function Header() {
           {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
 
-        <Link href="/" className="flex shrink-0 items-center gap-2.5">
-          <Image src="/images/logo.png" alt="Giftshop logo" width={36} height={36} className="h-9 w-9" />
-          <span className="leading-tight">
-            <span className="block text-lg font-bold text-slate-800">Giftshop</span>
-            <span className="block text-xs font-medium text-slate-500">
+        <Link href="/" className="flex min-w-0 items-center gap-2.5">
+          <Image src="/images/logo.png" alt="Giftshop logo" width={36} height={36} className="h-9 w-9 shrink-0" />
+          <span className="min-w-0 leading-tight">
+            <span className="block truncate text-lg font-bold text-slate-800">Giftshop</span>
+            <span className="block truncate text-xs font-medium text-slate-500">
               Chuyên Biên Hòa
             </span>
           </span>
@@ -161,7 +165,7 @@ export default function Header() {
           })}
         </nav>
 
-        <div className="flex shrink-0 items-center gap-4">
+        <div className="flex shrink-0 items-center gap-3 sm:gap-4">
           {/* Mobile search toggle */}
           <button
             onClick={() => setMobileSearchOpen((v) => !v)}

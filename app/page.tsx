@@ -14,7 +14,7 @@ export default function Home() {
   return (
     <>
       <Header />
-      <main className="mx-auto w-full max-w-[1280px] px-6 py-6">
+      <main className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 py-6">
         <HomeGate>
           {/* CatalogProvider reads the ?search= query param via
               useSearchParams, which Next.js requires a Suspense boundary
@@ -22,14 +22,14 @@ export default function Home() {
           <Suspense>
             <CatalogProvider>
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-                <div id="catalog" className="flex scroll-mt-24 flex-col gap-6 lg:col-span-9">
+                <div id="catalog" className="flex min-w-0 scroll-mt-24 flex-col gap-6 lg:col-span-9">
                   <HeroBanner />
                   <CategoryBar />
                   <FeaturedProducts />
                   <FeaturesBar />
                 </div>
 
-                <div className="flex flex-col gap-4 lg:col-span-3">
+                <div className="flex min-w-0 flex-col gap-4 lg:col-span-3">
                   <TrustBadges />
                   <MiniCart />
                   <PromoBanner />
