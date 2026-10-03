@@ -9,6 +9,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
 import { getAvatarUrl } from "../lib/api";
 import { getLoginUrl } from "../lib/auth";
+import { useAppMode } from "../lib/appMode";
 import SettingsMenu from "./SettingsMenu";
 
 const navLinks = [
@@ -19,6 +20,7 @@ const navLinks = [
 
 function AccountLink() {
   const { user, loading, loggedIn } = useAuth();
+  const appMode = useAppMode();
 
   if (loading) {
     return (
@@ -30,11 +32,8 @@ function AccountLink() {
   }
 
   if (loggedIn && user) {
-    return (
-      <a
-        href={`https://www.chuyenbienhoa.com/${user.username}`}
-        className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-green-600"
-      >
+    const identity = (
+      <>
         <Image
           src={getAvatarUrl(user.username)}
           alt={user.profile_name || user.username}
@@ -46,9 +45,30 @@ function AccountLink() {
         <span className="hidden sm:inline max-w-[120px] truncate">
           {user.profile_name || user.username}
         </span>
+      </>
+    );
+    // In the app the profile lives on another site the WebView won't open -
+    // show who's signed in without linking anywhere.
+    if (appMode) {
+      return (
+        <span className="flex items-center gap-2 text-sm font-medium text-slate-700">
+          {identity}
+        </span>
+      );
+    }
+    return (
+      <a
+        href={`https://www.chuyenbienhoa.com/${user.username}`}
+        className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-green-600"
+      >
+        {identity}
       </a>
     );
   }
+
+  // The app always opens the shop signed in; there's no login page to send
+  // anyone to from inside it.
+  if (appMode) return null;
 
   return (
     <a

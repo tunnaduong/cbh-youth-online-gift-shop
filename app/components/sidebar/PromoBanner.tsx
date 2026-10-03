@@ -3,10 +3,12 @@
 import { CheckCircle2, Gift } from "lucide-react";
 import Link from "next/link";
 import { useStudentDiscount } from "../../contexts/StudentDiscountContext";
+import { useAppMode } from "../../lib/appMode";
 
 export default function PromoBanner() {
   const { percent, loading } = useStudentDiscount();
   const verified = percent > 0;
+  const appMode = useAppMode();
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-green-600 p-5 text-white">
@@ -28,6 +30,12 @@ export default function PromoBanner() {
             <CheckCircle2 className="h-4 w-4" />
             Đã xác minh
           </span>
+        ) : appMode ? (
+          // Verification is on the main site, which the app's WebView won't
+          // leave the shop for - point at where it lives in the app instead.
+          <p className="mt-4 text-sm font-semibold text-white">
+            Xác minh trong mục Cài đặt của ứng dụng
+          </p>
         ) : (
           <Link
             href="https://chuyenbienhoa.com/settings?tab=student-kyc"

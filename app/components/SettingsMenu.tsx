@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { LogOut, Monitor, Moon, Settings, Sun } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme, type Theme } from "../contexts/ThemeContext";
+import { useAppMode } from "../lib/appMode";
 
 const THEME_OPTIONS: { id: Theme; label: string; icon: typeof Sun }[] = [
   { id: "light", label: "Sáng", icon: Sun },
@@ -14,6 +15,7 @@ const THEME_OPTIONS: { id: Theme; label: string; icon: typeof Sun }[] = [
 export default function SettingsMenu() {
   const { theme, setTheme } = useTheme();
   const { loggedIn, logout } = useAuth();
+  const appMode = useAppMode();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -62,7 +64,8 @@ export default function SettingsMenu() {
             ))}
           </div>
 
-          {loggedIn && (
+          {/* The app manages the login (and account switching) itself. */}
+          {loggedIn && !appMode && (
             <>
               <div className="my-3 border-t border-slate-100" />
               <button
