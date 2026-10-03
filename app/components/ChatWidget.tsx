@@ -44,6 +44,8 @@ export default function ChatWidget() {
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const togglingAiRef = useRef(false);
+  const lastToggleAt = useRef(0);
+  const aiPendingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -52,6 +54,7 @@ export default function ChatWidget() {
 
     let cancelled = false;
     const load = () => {
+      const startedAt = Date.now();
       getConversationMessages(conversationId)
         .then((msgs) => {
           if (cancelled) return;
@@ -66,7 +69,13 @@ export default function ChatWidget() {
           if (cancelled) return;
           setAdminsOnline(admins_online);
           // Don't let a poll that started before a toggle undo it.
-          if (!togglingAiRef.current && typeof ai_enabled === "boolean") setAiEnabled(ai_enabled);
+          if (
+            !togglingAiRef.current &&
+            startedAt > lastToggleAt.current &&
+            typeof ai_enabled === "boolean"
+          ) {
+            setAiEnabled(ai_enabled);
+          }
         })
         .catch((error) => console.error("Failed to load support status:", error));
     };
@@ -110,6 +119,7 @@ export default function ChatWidget() {
       setAiEnabled(!next);
       showToast("Không đổi được chế độ, vui lòng thử lại.");
     } finally {
+      lastToggleAt.current = Date.now();
       setTogglingAi(false);
       togglingAiRef.current = false;
     }
@@ -125,7 +135,11 @@ export default function ChatWidget() {
     try {
       const message = await sendChatMessage(conversationId, content);
       setMessages((prev) => [...prev, message]);
-      if (aiEnabled) setAiPending(true);
+      if (aiEnabled) {
+        setAiPending(true);
+        if (aiPendingTimer.current) clearTimeout(aiPendingTimer.current);
+        aiPendingTimer.current = setTimeout(() => setAiPending(false), 45000);
+      }
     } catch (error) {
       console.error("Failed to send chat message:", error);
       setInput(content);
