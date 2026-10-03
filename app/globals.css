@@ -17,6 +17,18 @@ body {
 }
 
 /*
+ * Never scroll sideways: anything that pokes past the viewport (a wide
+ * banner, an off-canvas drawer) is cut off instead of widening the page -
+ * which on a phone, and in the mobile app's WebView, meant dragging the
+ * whole shop left and right. `clip` rather than `hidden` so the page doesn't
+ * become a scroll container, which would break the sticky header.
+ */
+html,
+body {
+  overflow-x: clip;
+}
+
+/*
  * Dark theme: every component in this app is built with the default
  * Tailwind slate palette (bg-white cards, border-slate-200, text-slate-800,
  * etc) rather than dark:-prefixed classes. Tailwind v4 utilities read their

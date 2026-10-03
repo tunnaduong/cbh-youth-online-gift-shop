@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Be_Vietnam_Pro } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
@@ -41,6 +41,15 @@ export const metadata: Metadata = {
     shortcut: "/images/logo.png",
     apple: "/images/logo.png",
   },
+};
+
+// Lay out at the device's width and don't zoom - otherwise iOS zooms in on
+// focusing the search/checkout inputs and the page is left wider than the
+// screen.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({
