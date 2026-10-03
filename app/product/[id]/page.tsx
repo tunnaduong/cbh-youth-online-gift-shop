@@ -95,7 +95,7 @@ export default function ProductDetailPage({
     }
     setContacting(true);
     try {
-      const { conversation_id } = await contactShop(product.id);
+      const { conversation_id } = await contactShop(product.id, variant?.id);
       openChat(conversation_id);
     } catch (error) {
       console.error("Failed to contact shop:", error);

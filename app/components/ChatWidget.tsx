@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Image as ImageIcon, MessageCircle, Send, Smile, X } from "lucide-react";
+import { Bot, Image as ImageIcon, MessageCircle, Send, Smile, X } from "lucide-react";
 import { useChatWidget } from "../contexts/ChatWidgetContext";
 import {
   getConversationMessages,
@@ -13,7 +13,7 @@ import {
   type ChatMessage,
   type ReactionType,
 } from "../lib/chat";
-import { getSupportStatus } from "../lib/shop";
+import { getSupportStatus, setSupportAi } from "../lib/shop";
 
 const POLL_INTERVAL_MS = 4000;
 
@@ -36,6 +36,14 @@ export default function ChatWidget() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [adminsOnline, setAdminsOnline] = useState<number | null>(null);
   const [pickerFor, setPickerFor] = useState<number | null>(null);
+  // AI assistant: on = it answers every message, off = wait for a person.
+  const [aiEnabled, setAiEnabled] = useState(true);
+  const [togglingAi, setTogglingAi] = useState(false);
+  // True from sending a message until the AI's answer shows up in the poll.
+  const [aiPending, setAiPending] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const togglingAiRef = useRef(false);
   const listRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -46,12 +54,19 @@ export default function ChatWidget() {
     const load = () => {
       getConversationMessages(conversationId)
         .then((msgs) => {
-          if (!cancelled) setMessages(msgs);
+          if (cancelled) return;
+          setMessages(msgs);
+          // The assistant (or a staff member) has answered the last message.
+          const last = msgs[msgs.length - 1];
+          if (last && !last.is_myself) setAiPending(false);
         })
         .catch((error) => console.error("Failed to load chat messages:", error));
       getSupportStatus()
-        .then(({ admins_online }) => {
-          if (!cancelled) setAdminsOnline(admins_online);
+        .then(({ admins_online, ai_enabled }) => {
+          if (cancelled) return;
+          setAdminsOnline(admins_online);
+          // Don't let a poll that started before a toggle undo it.
+          if (!togglingAiRef.current && typeof ai_enabled === "boolean") setAiEnabled(ai_enabled);
         })
         .catch((error) => console.error("Failed to load support status:", error));
     };
@@ -70,6 +85,36 @@ export default function ChatWidget() {
 
   if (!conversationId) return null;
 
+  const showToast = (text: string) => {
+    setToast(text);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 3500);
+  };
+
+  const handleToggleAi = async () => {
+    if (togglingAi) return;
+    const next = !aiEnabled;
+    setTogglingAi(true);
+    togglingAiRef.current = true;
+    setAiEnabled(next);
+    if (!next) setAiPending(false);
+    try {
+      await setSupportAi(conversationId, next);
+      showToast(
+        next
+          ? "Đã bật AI: Yoyo AI sẽ tự động trả lời bạn."
+          : "Đã tắt AI: bạn đang trò chuyện với nhân viên shop."
+      );
+    } catch (error) {
+      console.error("Failed to switch support AI:", error);
+      setAiEnabled(!next);
+      showToast("Không đổi được chế độ, vui lòng thử lại.");
+    } finally {
+      setTogglingAi(false);
+      togglingAiRef.current = false;
+    }
+  };
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     const content = input.trim();
@@ -80,6 +125,7 @@ export default function ChatWidget() {
     try {
       const message = await sendChatMessage(conversationId, content);
       setMessages((prev) => [...prev, message]);
+      if (aiEnabled) setAiPending(true);
     } catch (error) {
       console.error("Failed to send chat message:", error);
       setInput(content);
@@ -154,22 +200,50 @@ export default function ChatWidget() {
                 adminsOnline ? "bg-emerald-300" : "bg-slate-300"
               }`}
             />
-            {adminsOnline === null
-              ? "Đang kiểm tra..."
-              : adminsOnline > 0
-                ? "Admin đang online"
-                : "Hiện không có admin online - shop sẽ phản hồi sớm nhất"}
+            {aiEnabled
+              ? "Yoyo AI đang trả lời tự động"
+              : adminsOnline === null
+                ? "Đang kiểm tra..."
+                : adminsOnline > 0
+                  ? "Admin đang online"
+                  : "Hiện không có admin online - shop sẽ phản hồi sớm nhất"}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={closeChat}
-          className="flex h-7 w-7 items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white"
-          aria-label="Đóng khung chat"
-        >
-          <X className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={handleToggleAi}
+            disabled={togglingAi}
+            aria-pressed={aiEnabled}
+            title={aiEnabled ? "Tắt AI để trò chuyện với nhân viên" : "Bật AI trả lời tự động"}
+            className={`flex h-7 items-center gap-1 rounded-full px-2 text-[11px] font-semibold transition-colors disabled:opacity-60 ${
+              aiEnabled
+                ? "bg-white text-green-700"
+                : "bg-white/10 text-white/70 hover:bg-white/20 hover:text-white"
+            }`}
+          >
+            <Bot className="h-3.5 w-3.5" />
+            AI
+          </button>
+          <button
+            type="button"
+            onClick={closeChat}
+            className="flex h-7 w-7 items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white"
+            aria-label="Đóng khung chat"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
+
+      {toast && (
+        <div
+          role="status"
+          className="absolute left-1/2 top-14 z-20 w-max max-w-[90%] -translate-x-1/2 rounded-full bg-slate-800 px-3.5 py-1.5 text-center text-xs text-white shadow-lg"
+        >
+          {toast}
+        </div>
+      )}
 
       <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto bg-slate-50 px-3 py-4">
         {messages.map((m) => {
@@ -180,6 +254,11 @@ export default function ChatWidget() {
                 {!m.is_myself && (
                   <span className="px-1 text-[11px] font-medium text-slate-500">
                     {m.sender.profile_name}
+                    {m.sender.is_ai && (
+                      <span className="ml-1 rounded bg-green-100 px-1 py-px text-[10px] font-semibold text-green-700">
+                        AI
+                      </span>
+                    )}
                   </span>
                 )}
 
@@ -253,6 +332,9 @@ export default function ChatWidget() {
             </div>
           );
         })}
+        {aiEnabled && aiPending && (
+          <p className="px-1 text-xs italic text-slate-400">Yoyo AI đang trả lời...</p>
+        )}
       </div>
 
       <form onSubmit={handleSend} className="flex items-center gap-2 border-t border-slate-100 p-3">

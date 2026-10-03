@@ -52,11 +52,11 @@ The **CBH Youth Online gift shop**, served at **https://giftshop.chuyenbienhoa.c
 | **Members-only home:** hero, category bar, featured products, sidebar with mini cart, promo and trust badges | `app/page.tsx`, `HomeGate.tsx`, `HeroBanner.tsx`, `CategoryBar.tsx`, `FeaturedProducts.tsx`, `components/sidebar/*` |
 | **Product listing** with search (`?search=`) and category filter | `app/products/` (`ProductsContent.tsx`), `CatalogContext.tsx` |
 | **Product detail** with option/variant picking (for example a Size option), stock, and a "contact shop" button that opens support chat | `app/product/[id]/page.tsx` |
-| **Cart,** kept in `localStorage.giftshop_cart` | `app/cart/page.tsx`, `CartContext.tsx`, `CartLineItem.tsx` |
+| **Cart,** kept in `localStorage.giftshop_cart` and, when signed in, synced with the account (`GET`/`PUT /v1.0/shop/cart`) so it follows the user across devices | `app/cart/page.tsx`, `CartContext.tsx`, `CartLineItem.tsx` |
 | **Checkout:** 15,000đ shipping and three payment methods.<br>• **Points** (`vndToPoints`: 1,000đ = 10 points), deducted on the server.<br>• **QR bank transfer** (SePay): an in-page QR code with payment status polling. Each attempt is a new order with a fresh code.<br>• **COD** | `app/checkout/page.tsx`, `PaymentMethodSelector.tsx`, `lib/shop.ts` |
 | **My orders:** status and payment badges, cancelling pending orders that haven't been paid | `app/orders/page.tsx` |
 | **Student discount:** a percentage for verified students from `/v1.0/student-verification/status`, shown as a struck-through original price | `StudentDiscountContext.tsx`, `Price.tsx` |
-| **Support chat widget:** floating chat with shop admins, images (10MB max), reactions and admins-online status. State is kept in `localStorage.giftshop_chat_widget` | `ChatWidget.tsx`, `ChatWidgetContext.tsx`, `lib/chat.ts` |
+| **Support chat widget:** floating chat with shop admins, images (10MB max), reactions, admins-online status and an **AI assistant switch** (the "AI" pill in the header: on = Yoyo AI answers every message, off = wait for staff; a toast announces the change). State is kept in `localStorage.giftshop_chat_widget` | `ChatWidget.tsx`, `ChatWidgetContext.tsx`, `lib/chat.ts` |
 | **Theme:** light, dark or auto, in `localStorage.giftshop_theme`. An inline script in `layout.tsx` sets it before paint, and dark mode works by redefining the slate palette variables in `globals.css` | `ThemeContext.tsx`, `SettingsMenu.tsx` |
 | **Mobile drawer navigation** | `MobileDrawer.tsx`, `MobileDrawerTrigger.tsx` |
 

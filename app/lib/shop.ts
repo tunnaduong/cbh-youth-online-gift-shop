@@ -203,16 +203,66 @@ export function getOrderPaymentStatus(orderId: number): Promise<PaymentStatusRes
  * minutes" window as getSupportStatus(), at the moment of contact.
  */
 export function contactShop(
-  productId: number
-): Promise<{ conversation_id: number; admins_online: number }> {
-  return shopFetch<{ conversation_id: number; admins_online: number }>(
+  productId: number,
+  variantId?: number | null
+): Promise<{ conversation_id: number; admins_online: number; ai_enabled: boolean }> {
+  return shopFetch<{ conversation_id: number; admins_online: number; ai_enabled: boolean }>(
     `/shop/products/${productId}/contact`,
-    { method: "POST" },
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      // The picked variant gives the staff and the AI assistant the exact item.
+      body: JSON.stringify(variantId ? { variant_id: variantId } : {}),
+    },
     true
   );
 }
 
 /** Live admin online/offline indicator for the chat widget - see ShopController::supportStatus. */
-export function getSupportStatus(): Promise<{ admins_online: number }> {
-  return shopFetch<{ admins_online: number }>("/shop/support/status", {}, true);
+export function getSupportStatus(): Promise<{ admins_online: number; ai_enabled: boolean }> {
+  return shopFetch<{ admins_online: number; ai_enabled: boolean }>("/shop/support/status", {}, true);
+}
+
+/**
+ * Turn the AI assistant on or off for the customer's support thread: on = it
+ * answers every message, off = wait for a real person.
+ */
+export function setSupportAi(
+  conversationId: number,
+  enabled: boolean
+): Promise<{ ai_enabled: boolean; message: string }> {
+  return shopFetch<{ ai_enabled: boolean; message: string }>(
+    `/shop/support/${conversationId}/ai`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled }),
+    },
+    true
+  );
+}
+
+export interface ServerCart {
+  items: { product: ShopProduct; variant: ShopProductVariant | null; quantity: number }[];
+  updated_at: string | null;
+}
+
+/** The account's cart, shared by every device it is signed in on. */
+export function getServerCart(): Promise<ServerCart> {
+  return shopFetch<ServerCart>("/shop/cart", {}, true);
+}
+
+/** Replace the account's cart with these lines. */
+export function saveServerCart(
+  items: { product_id: number; variant_id: number | null; quantity: number }[]
+): Promise<ServerCart> {
+  return shopFetch<ServerCart>(
+    "/shop/cart",
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items }),
+    },
+    true
+  );
 }
