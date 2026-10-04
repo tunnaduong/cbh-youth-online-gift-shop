@@ -55,6 +55,10 @@ const STORAGE_KEY = "giftshop_cart";
 // Which account this browser's cart was last merged into, so a guest cart is
 // only folded into the account's cart once.
 const SYNCED_USER_KEY = "giftshop_cart_user";
+// "1" while this browser holds a change the account hasn't received yet (the
+// tab was closed or reloaded within the debounce, or the save failed), so the
+// next load sends it instead of replacing it with the older account cart.
+const DIRTY_KEY = "giftshop_cart_dirty";
 const PUSH_DELAY_MS = 600;
 
 const fromServer = (cart: ServerCart): CartItem[] =>
@@ -91,6 +95,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // it), so the effect below doesn't push it straight back.
   const fromServerRef = useRef(false);
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Saves still on their way to the server.
+  const savingRef = useRef(0);
   // Set by add/remove/quantity/clear while the account cart hasn't loaded
   // yet, so that change isn't thrown away when it does.
   const dirtyBeforeSyncRef = useRef(false);
@@ -126,6 +132,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       // as a guest (no key) is kept.
       if (localStorage.getItem(SYNCED_USER_KEY) !== null) {
         localStorage.removeItem(SYNCED_USER_KEY);
+        localStorage.removeItem(DIRTY_KEY);
         dirtyBeforeSyncRef.current = false;
         setItems([]);
       }
@@ -148,9 +155,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const syncedUser = localStorage.getItem(SYNCED_USER_KEY);
 
         if (syncedUser === String(userId)) {
-          if (dirtyBeforeSyncRef.current) {
+          if (dirtyBeforeSyncRef.current || localStorage.getItem(DIRTY_KEY) === "1") {
             // Changed here while the account cart was still loading (e.g. a
-            // quick "add to cart" on a slow connection): keep that change.
+            // quick "add to cart" on a slow connection), or changed on an
+            // earlier visit and never sent: keep that change.
             const saved = await saveServerCart(toPayload(local));
             if (cancelled) return;
             applyServerCart(saved);
@@ -173,6 +181,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
 
         dirtyBeforeSyncRef.current = false;
+        localStorage.removeItem(DIRTY_KEY);
         localStorage.setItem(SYNCED_USER_KEY, String(userId));
         setSynced(true);
       })
@@ -191,16 +200,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    localStorage.setItem(DIRTY_KEY, "1");
     if (pushTimer.current) clearTimeout(pushTimer.current);
     pushTimer.current = setTimeout(() => {
       pushTimer.current = null;
+      savingRef.current += 1;
       saveServerCart(
         itemsRef.current.map((i) => ({
           product_id: i.product.id,
           variant_id: i.variant?.id ?? null,
           quantity: i.quantity,
         }))
-      ).catch((error) => console.error("Failed to save the account cart:", error));
+      )
+        .then(() => {
+          // Only once nothing newer is waiting or still being sent.
+          if (!pushTimer.current && savingRef.current === 1) {
+            localStorage.removeItem(DIRTY_KEY);
+          }
+        })
+        .catch((error) => console.error("Failed to save the account cart:", error))
+        .finally(() => {
+          savingRef.current -= 1;
+        });
     }, PUSH_DELAY_MS);
   }, [items, synced, userId]);
 
@@ -209,11 +230,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (!synced || !userId) return;
 
     const refresh = () => {
-      // A change of our own is still waiting to be sent: it wins.
-      if (document.visibilityState !== "visible" || pushTimer.current) return;
+      // A change of our own is still waiting to be sent (or on its way, in
+      // which case the server may still answer with the cart before it): it wins.
+      const busy = () => pushTimer.current !== null || savingRef.current > 0;
+      if (document.visibilityState !== "visible" || busy()) return;
       getServerCart()
         .then((cart) => {
-          if (!pushTimer.current) applyServerCart(cart);
+          if (!busy()) applyServerCart(cart);
         })
         .catch(() => {});
     };

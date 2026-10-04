@@ -29,7 +29,7 @@ const REACTION_TYPES: { type: ReactionType; emoji: string; label: string }[] = [
 ];
 
 export default function ChatWidget() {
-  const { conversationId, open, openChat, closeChat } = useChatWidget();
+  const { conversationId, open, openChat, closeChat, resetChat } = useChatWidget();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -37,43 +37,74 @@ export default function ChatWidget() {
   const [adminsOnline, setAdminsOnline] = useState<number | null>(null);
   const [pickerFor, setPickerFor] = useState<number | null>(null);
   // AI assistant: on = it answers every message, off = wait for a person.
-  const [aiEnabled, setAiEnabled] = useState(true);
+  // null until the server has said which - the switch stays disabled until
+  // then, so a click can't "toggle" from a guessed state.
+  const [aiEnabled, setAiEnabled] = useState<boolean | null>(null);
   const [togglingAi, setTogglingAi] = useState(false);
-  // True from sending a message until the AI's answer shows up in the poll.
-  const [aiPending, setAiPending] = useState(false);
+  // The message the AI is still expected to answer (null = not waiting).
+  const [pendingAfterId, setPendingAfterId] = useState<number | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const togglingAiRef = useRef(false);
-  const lastToggleAt = useRef(0);
+  // Bumped when a switch starts and again when it ends: a status poll only
+  // counts if no switch started or finished while it was in flight.
+  const toggleSeq = useRef(0);
   const aiPendingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Another thread (another account's, or a fresh one): nothing carries over.
+  useEffect(() => {
+    setMessages([]);
+    setAiEnabled(null);
+    setPendingAfterId(null);
+    setPickerFor(null);
+  }, [conversationId]);
+
+  useEffect(
+    () => () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      if (aiPendingTimer.current) clearTimeout(aiPendingTimer.current);
+    },
+    []
+  );
 
   useEffect(() => {
     if (!open || !conversationId) return;
 
     let cancelled = false;
     const load = () => {
-      const startedAt = Date.now();
+      const seq = toggleSeq.current;
       getConversationMessages(conversationId)
         .then((msgs) => {
           if (cancelled) return;
-          setMessages(msgs);
-          // The assistant (or a staff member) has answered the last message.
-          const last = msgs[msgs.length - 1];
-          if (last && !last.is_myself) setAiPending(false);
+          // A message sent after this poll's snapshot was taken isn't in it
+          // yet: keep it instead of letting it vanish until the next poll.
+          const newest = msgs.length ? msgs[msgs.length - 1].id : 0;
+          setMessages((prev) => [...msgs, ...prev.filter((m) => m.id > newest)]);
+          // The assistant (or a staff member) has answered that message.
+          setPendingAfterId((cur) =>
+            cur !== null && msgs.some((m) => m.id > cur && !m.is_myself && m.type !== "system")
+              ? null
+              : cur
+          );
         })
         .catch((error) => console.error("Failed to load chat messages:", error));
       getSupportStatus()
-        .then(({ admins_online, ai_enabled }) => {
+        .then(({ admins_online, ai_enabled, conversation_id }) => {
           if (cancelled) return;
           setAdminsOnline(admins_online);
-          // Don't let a poll that started before a toggle undo it.
-          if (
-            !togglingAiRef.current &&
-            startedAt > lastToggleAt.current &&
-            typeof ai_enabled === "boolean"
-          ) {
+          // The thread remembered in this browser isn't this account's (it
+          // was saved under another account): use the right one, or none.
+          if (conversation_id === null) {
+            resetChat();
+            return;
+          }
+          if (typeof conversation_id === "number" && conversation_id !== conversationId) {
+            openChat(conversation_id);
+            return;
+          }
+          // Don't let a poll that overlapped a switch undo it.
+          if (seq === toggleSeq.current && typeof ai_enabled === "boolean") {
             setAiEnabled(ai_enabled);
           }
         })
@@ -86,11 +117,16 @@ export default function ChatWidget() {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [open, conversationId]);
+  }, [open, conversationId, openChat, resetChat]);
 
+  // Follow new messages only: scrolling on every poll made it impossible to
+  // read back through the thread (it jumped to the bottom every 4s).
+  const lastMessageId = messages.length ? messages[messages.length - 1].id : null;
+  const showAiPending = !!aiEnabled && pendingAfterId !== null;
   useEffect(() => {
+    if (!open) return;
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
-  }, [messages]);
+  }, [open, lastMessageId, showAiPending]);
 
   if (!conversationId) return null;
 
@@ -100,28 +136,35 @@ export default function ChatWidget() {
     toastTimer.current = setTimeout(() => setToast(null), 3500);
   };
 
+  // The poll may already have delivered a message by the time its own POST
+  // answers - adding it again showed it twice.
+  const appendMessage = (message: ChatMessage) =>
+    setMessages((prev) => (prev.some((m) => m.id === message.id) ? prev : [...prev, message]));
+
   const handleToggleAi = async () => {
-    if (togglingAi) return;
-    const next = !aiEnabled;
+    if (togglingAi || aiEnabled === null) return;
+    const previous = aiEnabled;
+    const next = !previous;
     setTogglingAi(true);
-    togglingAiRef.current = true;
+    toggleSeq.current += 1;
     setAiEnabled(next);
-    if (!next) setAiPending(false);
+    if (!next) setPendingAfterId(null);
     try {
-      await setSupportAi(conversationId, next);
+      const result = await setSupportAi(conversationId, next);
+      const enabled = typeof result.ai_enabled === "boolean" ? result.ai_enabled : next;
+      setAiEnabled(enabled);
       showToast(
-        next
+        enabled
           ? "Đã bật AI: Yoyo AI sẽ tự động trả lời bạn."
           : "Đã tắt AI: bạn đang trò chuyện với nhân viên shop."
       );
     } catch (error) {
       console.error("Failed to switch support AI:", error);
-      setAiEnabled(!next);
+      setAiEnabled(previous);
       showToast("Không đổi được chế độ, vui lòng thử lại.");
     } finally {
-      lastToggleAt.current = Date.now();
+      toggleSeq.current += 1;
       setTogglingAi(false);
-      togglingAiRef.current = false;
     }
   };
 
@@ -134,15 +177,17 @@ export default function ChatWidget() {
     setInput("");
     try {
       const message = await sendChatMessage(conversationId, content);
-      setMessages((prev) => [...prev, message]);
+      appendMessage(message);
       if (aiEnabled) {
-        setAiPending(true);
+        setPendingAfterId(message.id);
         if (aiPendingTimer.current) clearTimeout(aiPendingTimer.current);
-        aiPendingTimer.current = setTimeout(() => setAiPending(false), 45000);
+        aiPendingTimer.current = setTimeout(() => setPendingAfterId(null), 45000);
       }
     } catch (error) {
       console.error("Failed to send chat message:", error);
-      setInput(content);
+      // Don't overwrite what the customer has typed since.
+      setInput((cur) => cur || content);
+      showToast("Gửi tin nhắn thất bại, vui lòng thử lại.");
     } finally {
       setSending(false);
     }
@@ -163,7 +208,7 @@ export default function ChatWidget() {
     setUploadingImage(true);
     try {
       const message = await sendChatImage(conversationId, file);
-      setMessages((prev) => [...prev, message]);
+      appendMessage(message);
     } catch (error) {
       console.error("Failed to send chat image:", error);
       alert("Gửi ảnh thất bại, vui lòng thử lại.");
@@ -227,8 +272,8 @@ export default function ChatWidget() {
           <button
             type="button"
             onClick={handleToggleAi}
-            disabled={togglingAi}
-            aria-pressed={aiEnabled}
+            disabled={togglingAi || aiEnabled === null}
+            aria-pressed={!!aiEnabled}
             title={aiEnabled ? "Tắt AI để trò chuyện với nhân viên" : "Bật AI trả lời tự động"}
             className={`flex h-7 items-center gap-1 rounded-full px-2 text-[11px] font-semibold transition-colors disabled:opacity-60 ${
               aiEnabled
@@ -261,6 +306,15 @@ export default function ChatWidget() {
 
       <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto bg-slate-50 px-3 py-4">
         {messages.map((m) => {
+          // System lines (e.g. the AI being switched on/off) are notes in the
+          // thread, not somebody's message bubble.
+          if (m.type === "system") {
+            return (
+              <p key={m.id} className="px-4 text-center text-[11px] text-slate-400">
+                {m.content}
+              </p>
+            );
+          }
           const hasReactions = m.reactions.total > 0;
           return (
             <div key={m.id} className={`flex ${m.is_myself ? "justify-end" : "justify-start"}`}>
@@ -346,7 +400,7 @@ export default function ChatWidget() {
             </div>
           );
         })}
-        {aiEnabled && aiPending && (
+        {showAiPending && (
           <p className="px-1 text-xs italic text-slate-400">Yoyo AI đang trả lời...</p>
         )}
       </div>

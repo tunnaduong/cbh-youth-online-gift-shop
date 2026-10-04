@@ -220,9 +220,16 @@ export function contactShop(
   );
 }
 
+export interface SupportStatus {
+  admins_online: number;
+  ai_enabled: boolean;
+  /** The signed-in account's own support thread (null = none yet; missing on an older API). */
+  conversation_id?: number | null;
+}
+
 /** Live admin online/offline indicator for the chat widget - see ShopController::supportStatus. */
-export function getSupportStatus(): Promise<{ admins_online: number; ai_enabled: boolean }> {
-  return shopFetch<{ admins_online: number; ai_enabled: boolean }>("/shop/support/status", {}, true);
+export function getSupportStatus(): Promise<SupportStatus> {
+  return shopFetch<SupportStatus>("/shop/support/status", {}, true);
 }
 
 /**
