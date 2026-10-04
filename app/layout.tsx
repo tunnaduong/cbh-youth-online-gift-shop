@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Be_Vietnam_Pro } from "next/font/google";
+import { Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -7,8 +7,12 @@ import { CartProvider } from "./contexts/CartContext";
 import { ChatWidgetProvider } from "./contexts/ChatWidgetContext";
 import { StudentDiscountProvider } from "./contexts/StudentDiscountContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { ToastProvider } from "./contexts/ToastContext";
 import ChatWidget from "./components/ChatWidget";
+import Footer from "./components/Footer";
+import Header from "./components/Header";
 import MobileDrawerTrigger from "./components/MobileDrawerTrigger";
+import RouteProgress from "./components/ui/RouteProgress";
 
 // Runs before paint so the page never flashes the wrong theme: reads the
 // same localStorage key ThemeContext writes to, falling back to the OS
@@ -26,10 +30,11 @@ const THEME_INIT_SCRIPT = `
 })();
 `;
 
-const beVietnamPro = Be_Vietnam_Pro({
-  variable: "--font-be-vietnam-pro",
+// Inter, the main site's font.
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin", "vietnamese"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["300", "400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -60,10 +65,10 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${beVietnamPro.variable} h-full antialiased`}
+      className={`${inter.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-slate-50 font-sans text-slate-800">
+      <body className="flex min-h-full flex-col bg-page font-sans text-gray-800">
         <Script
           id="theme-init"
           strategy="beforeInteractive"
@@ -74,9 +79,18 @@ export default function RootLayout({
             <StudentDiscountProvider>
               <CartProvider>
                 <ChatWidgetProvider>
-                  {children}
-                  <MobileDrawerTrigger />
-                  <ChatWidget />
+                  <ToastProvider>
+                    <RouteProgress />
+                    {/* The header lives here, outside template.tsx, so it
+                        stays put while the page below it animates in on each
+                        navigation (it used to be part of every page and
+                        faded in again with it). */}
+                    <Header />
+                    <div className="flex-1">{children}</div>
+                    <Footer />
+                    <MobileDrawerTrigger />
+                    <ChatWidget />
+                  </ToastProvider>
                 </ChatWidgetProvider>
               </CartProvider>
             </StudentDiscountProvider>

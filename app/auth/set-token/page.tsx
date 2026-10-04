@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Spinner from "../../components/ui/Spinner";
 import { API_URL } from "../../lib/api";
 import {
   clearAuthToken,
@@ -88,7 +89,7 @@ export default function SetTokenPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-slate-500" />
+      <Spinner className="h-10 w-10" />
     </div>
   );
 }

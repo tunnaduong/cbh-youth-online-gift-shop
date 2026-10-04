@@ -6,7 +6,7 @@
 
 The **CBH Youth Online gift shop**, served at **https://giftshop.chuyenbienhoa.com**. It sells school merchandise to members of the CBH Youth Online student forum (Trường THPT Chuyên Biên Hòa). The UI is in Vietnamese.
 
-- **Stack:** Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4 and `lucide-react` icons. There's no state library: everything uses React contexts.
+- **Stack:** Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4 and `lucide-react` icons. There's no state library: everything uses React contexts. No UI or animation library either: the look copies the main site's design tokens by hand and all motion is CSS (see Conventions).
 - **⚠️ Read [AGENTS.md](AGENTS.md) before writing code.** This Next.js version has breaking changes compared with older versions. The bundled docs are in `node_modules/next/dist/docs/`. `CLAUDE.md` just includes `AGENTS.md`.
 
 ---
@@ -57,7 +57,9 @@ The **CBH Youth Online gift shop**, served at **https://giftshop.chuyenbienhoa.c
 | **My orders:** status and payment badges, cancelling pending orders that haven't been paid | `app/orders/page.tsx` |
 | **Student discount:** a percentage for verified students from `/v1.0/student-verification/status`, shown as a struck-through original price | `StudentDiscountContext.tsx`, `Price.tsx` |
 | **Support chat widget:** floating chat with shop admins, images (10MB max), reactions, admins-online status and an **AI assistant switch** (the "AI" pill in the header: on = Yoyo AI answers every message, off = wait for staff; a toast announces the change). State is kept in `localStorage.giftshop_chat_widget` together with the account it belongs to, and is dropped on sign-out or account change | `ChatWidget.tsx`, `ChatWidgetContext.tsx`, `lib/chat.ts` |
-| **Theme:** light, dark or auto, in `localStorage.giftshop_theme`. An inline script in `layout.tsx` sets it before paint, and dark mode works by redefining the slate palette variables in `globals.css` | `ThemeContext.tsx`, `SettingsMenu.tsx` |
+| **Theme:** light, dark or auto, in `localStorage.giftshop_theme`. An inline script in `layout.tsx` sets it before paint, and dark mode works by redefining the colour variables (`gray-*`, `surface`, `page`, `brand`…) under `.dark` in `globals.css` - components have no `dark:` classes | `ThemeContext.tsx`, `SettingsMenu.tsx` |
+| **Look and motion:** the main site's design (brand green `#319527`, Inter, 69px translucent top bar, `rounded-2xl` bordered cards, charcoal dark theme) plus CSS-only animation: page fade-up, staggered grids, scroll reveal, card lift and image zoom, menus that pop in, top route progress bar, cart badge bump, image shimmer, typing dots. All of it stops under `prefers-reduced-motion` | `globals.css`, `lib/ui.ts`, `components/ui/*` |
+| **Toasts:** `useToast()(text, "success" \| "error")` - a pill at the top centre (add to cart, errors) | `contexts/ToastContext.tsx` |
 | **Mobile drawer navigation** | `MobileDrawer.tsx`, `MobileDrawerTrigger.tsx` |
 
 **API endpoints used** (all `${NEXT_PUBLIC_API_URL}/v1.0/...`):
@@ -72,9 +74,9 @@ The **CBH Youth Online gift shop**, served at **https://giftshop.chuyenbienhoa.c
 
 ```
 app/
-├── layout.tsx              Root layout: font, viewport (device-width, no zoom), theme-init script, provider stack
-├── template.tsx            Re-mounts on every navigation so the page-transition CSS animation replays
-├── globals.css             Tailwind v4, dark theme via redefined slate variables, html/body overflow-x: clip
+├── layout.tsx              Root layout: Inter font, viewport (device-width, no zoom), theme-init script, provider stack, Header + Footer + route progress bar
+├── template.tsx            Re-mounts on every navigation so the page-transition CSS animation replays (header/footer are outside it)
+├── globals.css             Tailwind v4 @theme tokens (main site's palette), dark theme via redefined variables, keyframes + motion classes, html/body overflow-x: clip
 ├── page.tsx                Home (/)
 ├── products/               /products listing (page.tsx + ProductsContent.tsx client part)
 ├── product/[id]/page.tsx   Product detail
@@ -83,23 +85,29 @@ app/
 ├── orders/page.tsx         My orders
 ├── auth/set-token/page.tsx Mobile-app login handoff (?code= → redeem → shared cookie)
 ├── components/
-│   ├── Header.tsx          Logo, nav, search, cart, account link (app-mode aware), SettingsMenu
+│   ├── Header.tsx          Top bar (rendered once in layout.tsx): logo, nav pills, search, cart, account link (app-mode aware), SettingsMenu
+│   ├── Footer.tsx          Green link strip + brand line (the link to the forum is hidden in app mode)
 │   ├── SettingsMenu.tsx    Theme picker + sign-out (hidden in app mode)
 │   ├── HomeGate.tsx        Spinner while auth state loads
-│   ├── HeroBanner.tsx, FeaturesBar.tsx, CategoryBar.tsx, FeaturedProducts.tsx
-│   ├── ProductThumb.tsx, Price.tsx, CartLineItem.tsx, PaymentMethodSelector.tsx
+│   ├── HeroBanner.tsx      Green gradient hero: headline, search, quick-action tiles
+│   ├── FeaturesBar.tsx, CategoryBar.tsx, FeaturedProducts.tsx
+│   ├── ProductThumb.tsx    Product photo (lazy, shimmer until loaded, fade-in) or icon fallback
+│   ├── Price.tsx, CartLineItem.tsx, PaymentMethodSelector.tsx
 │   ├── ChatWidget.tsx      Floating support chat
 │   ├── MobileDrawer.tsx, MobileDrawerTrigger.tsx
-│   └── sidebar/            MiniCart, PromoBanner (student verification CTA), TrustBadges
-├── contexts/               Auth, Cart, Catalog, ChatWidget, StudentDiscount, Theme providers
+│   ├── sidebar/            MiniCart, PromoBanner (student verification CTA), TrustBadges
+│   └── ui/                 Shared pieces: ProductCard (+ skeleton, the only product card), SectionHeader, EmptyState, Spinner, Reveal (scroll reveal), RouteProgress
+├── contexts/               Auth, Cart, Catalog, ChatWidget, StudentDiscount, Theme, Toast providers
 └── lib/
+    ├── ui.ts               Shared class strings: card, btnPrimary, btnOutline, iconBtn, input, pageTitle, skeleton, stagger()
+    ├── useInView.ts        IntersectionObserver hook behind Reveal
     ├── api.ts              API_URL, getCurrentUser, avatar URL, student verification status
     ├── auth.ts             Shared auth_token cookie read/write/clear, main-site login URL
     ├── appMode.ts          useAppMode(): ?app=true / sessionStorage cbh_app_mode
     ├── shop.ts             Shop types + API calls, vndToPoints, variantLabel
     ├── chat.ts             Support chat API (messages, images, reactions)
     └── categoryIcons.ts    Category → lucide icon mapping
-public/                     hero.png, images/logo.png, default Next svgs
+public/                     images/logo.png, default Next svgs
 AGENTS.md / CLAUDE.md       Agent rules (read the Next.js docs in node_modules first)
 ```
 
@@ -134,6 +142,8 @@ npm run lint         # eslint (eslint-config-next)
 - **Pushing:** `main` isn't branch-protected, so changes go straight to `main`. Bigger features have gone through PRs (for example #1, the chat widget).
 - **Comments:** code comments explain *why*, often at length. Keep that density when editing.
 - **Pages:** client components use `"use client"`. Anything that reads `window` or storage does it in an effect, so the server render matches the client.
+- **Styling:** use the tokens in `globals.css` and the strings in `lib/ui.ts`. Green is `primary-*` (fills, borders) and `brand` / `brand-strong` (green *text*, which is lighter in dark mode); neutrals are `gray-*`; backgrounds are `page`, `surface` (cards), `popover`, `chip`, `nav`. Don't use `slate-*`, `green-*` or `bg-white` for a surface: only the names above are redefined by the dark theme. Plain `white` is for things that sit on green (button text, overlays) and stays white in both themes. New product lists use `components/ui/ProductCard`.
+- **Motion:** CSS only (`animate-*` utilities and the `.stagger`, `.shimmer`, `.reveal-*` classes in `globals.css`); no animation library. Anything fixed-position or sticky must not sit under a lingering `transform`.
 - **Prices** are in VND throughout. Points come from `vndToPoints`, using the same rate as the backend `PointsService`.
 
 ---
@@ -142,7 +152,8 @@ npm run lint         # eslint (eslint-config-next)
 
 | Commit | Change |
 |---|---|
-| (this commit) | **Fix: support chat AI switch + chat and cart bugs (not built or run: no Node on this machine; goes with an API change).** The switch failed for anyone whose widget pointed at a thread that isn't their own: an admin account (the API put their inquiry into another customer's thread - fixed in the API) or a thread id remembered in `localStorage` from another account. `ChatWidgetContext` now stores the owning account with the thread and drops it on sign-out or account change; `ChatWidget` also takes `conversation_id` from `shop/support/status`. The AI pill stays disabled until the server has said on/off, uses the PUT's answer, and a poll that overlapped a switch is ignored (sequence counter instead of timestamps). Also: no more jump to the bottom every 4s (scrolls on new messages only), a sent message can't appear twice or vanish for one poll, system lines render as centred notes, a failed send shows a toast. `CartContext`: a change not yet saved (tab closed within the debounce, failed save) is flagged in `localStorage.giftshop_cart_dirty` and sent on the next load instead of being replaced by the older account cart; a focus refresh can't overwrite the cart while a save is in flight. |
+| (this commit) | **UI revamp to match the main site, with motion (not built or run: no Node on this machine - run `npm run build` and look at it before trusting it).** Tokens in `globals.css` now carry the main site's palette (`primary-*` = `#319527` scale, neutral greys, `#F8F8F8` page, charcoal dark theme `#2c2f2e` / `#3c3c3c`); `--color-white` is no longer remapped in dark mode (it used to turn the text on green buttons dark). Font is Inter. `Header` moved into `layout.tsx` and restyled after the main navbar (69px, blur, pill nav with green glow, round icon buttons, red count badge); nav links are `next/link` now. New `Footer`, `ToastContext`, `components/ui/*` (one `ProductCard` replacing three copies, `SectionHeader`, `EmptyState`, `Spinner`, `Reveal`, `RouteProgress`), `lib/ui.ts`. Home: green gradient hero with search and quick-action tiles (`public/hero.png` deleted), 320px sticky right column. Every page restyled; orders and product pages got skeletons; checkout inputs got labels; the product breadcrumb's category link now goes to `/products?category=`. Motion: page fade-up, staggered grids, scroll reveal, hover lift/zoom, pop-in menus, route progress bar, cart badge bump, add-to-cart toast and tick, image shimmer/fade-in, animated success tick, chat panel/messages/typing dots. The drawer button moves above the chat button instead of hiding under it. `prefers-reduced-motion` now really disables all of it. |
+| `cd8d6c3` | **Fix: support chat AI switch + chat and cart bugs (not built or run: no Node on this machine; goes with an API change).** The switch failed for anyone whose widget pointed at a thread that isn't their own: an admin account (the API put their inquiry into another customer's thread - fixed in the API) or a thread id remembered in `localStorage` from another account. `ChatWidgetContext` now stores the owning account with the thread and drops it on sign-out or account change; `ChatWidget` also takes `conversation_id` from `shop/support/status`. The AI pill stays disabled until the server has said on/off, uses the PUT's answer, and a poll that overlapped a switch is ignored (sequence counter instead of timestamps). Also: no more jump to the bottom every 4s (scrolls on new messages only), a sent message can't appear twice or vanish for one poll, system lines render as centred notes, a failed send shows a toast. `CartContext`: a change not yet saved (tab closed within the debounce, failed save) is flagged in `localStorage.giftshop_cart_dirty` and sent on the next load instead of being replaced by the older account cart; a focus refresh can't overwrite the cart while a save is in flight. |
 | `874b638` | **App sessions.** `/auth/set-token?logout=1` drops the session (revoking it on the API when the app handed it over); a new handoff revokes the previous app-handed session; `cbh_session_source=app` cookie (shared with the main site) marks app-handed sessions. `lib/clientInfo.ts` sends the same device headers as the main site, labelling WebView sessions ("WebView trong ứng dụng CBH Youth") and app-handed browsers ("· mở từ ứng dụng") in the logged-in devices list. |
 | `9035033` | **Cart sync and support chat fixes (not built or run).** `CartContext`: a local cart is merged into the account only when it was built as a guest (`giftshop_cart_user` unset) - a cart left by another account is replaced by the server's, never merged; signing out (also from another CBH site, since the login cookie is shared) empties a cart that belonged to an account; a change made while the account cart is still loading is saved instead of being overwritten; a pending save is dropped when the user changes. `ChatWidget`: a status poll that started before an AI on/off switch can't undo it; the "Yoyo AI đang trả lời..." line gives up after 45s. |
 | `36a31d5` / `f469ffc` | **Support chat AI switch + cart synced with the account (not built or run: no Node on the machine it was written on).** `ChatWidget` has an "AI" pill: while on, the API answers each customer message with Yoyo AI (product, variant and recent orders are given to it server-side); turning it off calls `PUT /shop/support/{id}/ai` and shows a toast. AI replies carry an "AI" badge and a "Yoyo AI đang trả lời..." line shows while waiting. "Nhắn tin" now sends the picked `variant_id`. `CartContext` loads the account cart after sign-in (a guest cart is merged in once), pushes changes (debounced 600 ms), re-reads it when the tab regains focus, and empties the browser copy on sign-out. |

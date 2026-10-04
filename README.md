@@ -3,6 +3,8 @@ Front-end Giftshop for CBH Youth Online
 
 Cửa hàng quà lưu niệm Chuyên Biên Hòa tại https://giftshop.chuyenbienhoa.com. Xây dựng bằng Next.js 16, TypeScript và Tailwind CSS v4. Cửa hàng không có backend riêng: sản phẩm, giỏ hàng, đơn hàng và thanh toán (điểm hoạt động, chuyển khoản QR, COD) đều đi qua API của [cbh-youth-online-api](https://github.com/tunnaduong/cbh-youth-online-api).
 
+Giao diện dùng chung bộ nhận diện với trang chính (xanh `#319527`, font Inter, thanh điều hướng mờ, thẻ bo góc, giao diện tối màu than) và có hiệu ứng chuyển động bằng CSS thuần, không thêm thư viện.
+
 Cửa hàng không có trang đăng nhập riêng. Người dùng đăng nhập trên [chuyenbienhoa.com](https://www.chuyenbienhoa.com) ([cbh-youth-online-next-js](https://github.com/tunnaduong/cbh-youth-online-next-js)), và cửa hàng đọc cookie `auth_token` dùng chung cho `.chuyenbienhoa.com`. Ứng dụng [cbh-youth-online-mobile](https://github.com/tunnaduong/cbh-youth-online-mobile) mở cửa hàng trong WebView và tự đăng nhập sẵn.
 
 ## Chạy dự án

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Banknote, Coins, QrCode } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { vndToPoints } from "../lib/shop";
+import { btnPrimary } from "../lib/ui";
 
 
 export type PaymentMethod = "points" | "qr" | "cod";
@@ -63,30 +64,31 @@ export default function PaymentMethodSelector({
             key={method.id}
             type="button"
             onClick={() => setSelected(method.id)}
-            className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition-colors ${
+            aria-pressed={isSelected}
+            className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition duration-200 active:scale-[0.99] ${
               isSelected
-                ? "border-green-600 bg-green-50/60"
-                : "border-slate-200 bg-white hover:border-green-600/40"
+                ? "border-primary-500 bg-primary-50 shadow-card"
+                : "border-card-border bg-surface hover:border-primary-300"
             }`}
           >
             <span
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-                isSelected ? "bg-green-600 text-white" : "bg-slate-100 text-slate-600"
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition duration-200 ${
+                isSelected ? "scale-105 bg-primary-500 text-white shadow-glow" : "bg-gray-100 text-gray-600"
               }`}
             >
               <Icon className="h-5 w-5" />
             </span>
             <span className="flex-1">
-              <span className="block text-sm font-semibold text-slate-800">
+              <span className="block text-sm font-semibold text-gray-900">
                 {method.label}
               </span>
-              <span className="mt-0.5 block text-xs text-slate-500">
+              <span className="mt-0.5 block text-xs text-gray-500">
                 {method.description}
               </span>
               {method.id === "points" && (
                 <span
                   className={`mt-1 block text-xs font-semibold ${
-                    hasEnoughPoints ? "text-green-600" : "text-red-500"
+                    hasEnoughPoints ? "text-brand" : "text-red-500"
                   }`}
                 >
                   Số dư: {pointsBalance.toLocaleString("vi-VN")} điểm · Cần{" "}
@@ -95,11 +97,18 @@ export default function PaymentMethodSelector({
                 </span>
               )}
             </span>
+            {/* Radio: the dot grows in when chosen. */}
             <span
-              className={`mt-1 h-4 w-4 shrink-0 rounded-full border-2 ${
-                isSelected ? "border-green-600 bg-green-600" : "border-slate-300"
+              className={`mt-1 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border-2 transition duration-200 ${
+                isSelected ? "border-primary-500" : "border-gray-300"
               }`}
-            />
+            >
+              <span
+                className={`h-2 w-2 rounded-full bg-primary-500 transition duration-200 ${
+                  isSelected ? "scale-100" : "scale-0"
+                }`}
+              />
+            </span>
           </button>
         );
       })}
@@ -108,8 +117,11 @@ export default function PaymentMethodSelector({
         type="button"
         disabled={confirming || (selected === "points" && !hasEnoughPoints)}
         onClick={() => onConfirm(selected)}
-        className="mt-2 w-full rounded-xl bg-green-600 py-3.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+        className={`${btnPrimary} mt-2 h-12 w-full`}
       >
+        {confirming && (
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-500" />
+        )}
         {confirming
           ? "Đang xử lý..."
           : selected === "cod"

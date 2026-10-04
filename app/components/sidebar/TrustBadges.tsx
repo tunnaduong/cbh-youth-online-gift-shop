@@ -1,4 +1,6 @@
 import { BadgeCheck, ShieldCheck, Truck, Headset } from "lucide-react";
+import { card } from "../../lib/ui";
+import SectionHeader from "../ui/SectionHeader";
 
 const badges = [
   {
@@ -25,16 +27,17 @@ const badges = [
 
 export default function TrustBadges() {
   return (
-    <div className="rounded-2xl bg-white p-4">
-      <div className="flex flex-col gap-4">
+    <div className={`${card} p-4`}>
+      <SectionHeader icon={ShieldCheck} title="Cam kết của shop" />
+      <div className="mt-4 flex flex-col gap-3.5">
         {badges.map(({ icon: Icon, title, desc }) => (
           <div key={title} className="flex items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-green-200 text-green-600">
-              <Icon className="h-4.5 w-4.5" strokeWidth={1.8} />
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-brand">
+              <Icon className="h-5 w-5" strokeWidth={2} />
             </span>
-            <div>
-              <p className="text-sm font-semibold text-slate-800">{title}</p>
-              <p className="text-xs text-slate-500">{desc}</p>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900">{title}</p>
+              <p className="text-xs text-gray-500">{desc}</p>
             </div>
           </div>
         ))}
