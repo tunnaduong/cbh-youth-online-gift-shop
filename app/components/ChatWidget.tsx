@@ -123,9 +123,19 @@ export default function ChatWidget() {
   // read back through the thread (it jumped to the bottom every 4s).
   const lastMessageId = messages.length ? messages[messages.length - 1].id : null;
   const showAiPending = !!aiEnabled && pendingAfterId !== null;
+  // Jump straight to the end when the thread first shows; glide for what
+  // arrives after that.
+  const settledRef = useRef(false);
   useEffect(() => {
-    if (!open) return;
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
+    if (!open) {
+      settledRef.current = false;
+      return;
+    }
+    listRef.current?.scrollTo({
+      top: listRef.current.scrollHeight,
+      behavior: settledRef.current ? "smooth" : "auto",
+    });
+    if (lastMessageId !== null) settledRef.current = true;
   }, [open, lastMessageId, showAiPending]);
 
   if (!conversationId) return null;
@@ -201,7 +211,7 @@ export default function ChatWidget() {
     if (!file) return;
 
     if (file.size > MAX_CHAT_IMAGE_BYTES) {
-      alert("Ảnh vượt quá 10MB, vui lòng chọn ảnh nhỏ hơn.");
+      showToast("Ảnh vượt quá 10MB, vui lòng chọn ảnh nhỏ hơn.");
       return;
     }
 
@@ -211,7 +221,7 @@ export default function ChatWidget() {
       appendMessage(message);
     } catch (error) {
       console.error("Failed to send chat image:", error);
-      alert("Gửi ảnh thất bại, vui lòng thử lại.");
+      showToast("Gửi ảnh thất bại, vui lòng thử lại.");
     } finally {
       setUploadingImage(false);
     }
@@ -240,7 +250,7 @@ export default function ChatWidget() {
       <button
         type="button"
         onClick={() => openChat(conversationId)}
-        className="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-green-600 text-white shadow-lg transition-colors hover:bg-green-700"
+        className="fixed bottom-5 right-5 z-40 flex h-14 w-14 origin-bottom-right animate-pop-in items-center justify-center rounded-full bg-primary-500 text-white shadow-glow transition duration-200 hover:scale-105 hover:bg-primary-600 active:scale-95"
         aria-label="Mở khung chat hỗ trợ"
       >
         <MessageCircle className="h-6 w-6" />
@@ -249,14 +259,14 @@ export default function ChatWidget() {
   }
 
   return (
-    <div className="fixed bottom-5 right-5 z-40 flex h-[520px] w-[360px] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
-      <div className="flex items-center justify-between bg-green-600 px-4 py-3 text-white">
+    <div className="fixed bottom-5 right-5 z-40 flex h-[520px] max-h-[calc(100dvh-2.5rem)] w-[360px] max-w-[calc(100vw-2.5rem)] origin-bottom-right animate-chat-in flex-col overflow-hidden rounded-2xl border border-card-border bg-surface shadow-2xl">
+      <div className="flex items-center justify-between bg-gradient-to-r from-[#2E9A2A] to-[#3FA836] px-4 py-3 text-white">
         <div>
           <p className="text-sm font-semibold">Hỗ trợ Giftshop</p>
-          <p className="flex items-center gap-1.5 text-xs text-green-100">
+          <p className="flex items-center gap-1.5 text-xs text-white/85">
             <span
               className={`h-1.5 w-1.5 rounded-full ${
-                adminsOnline ? "bg-emerald-300" : "bg-slate-300"
+                adminsOnline ? "bg-emerald-300" : "bg-white/50"
               }`}
             />
             {aiEnabled
@@ -275,9 +285,9 @@ export default function ChatWidget() {
             disabled={togglingAi || aiEnabled === null}
             aria-pressed={!!aiEnabled}
             title={aiEnabled ? "Tắt AI để trò chuyện với nhân viên" : "Bật AI trả lời tự động"}
-            className={`flex h-7 items-center gap-1 rounded-full px-2 text-[11px] font-semibold transition-colors disabled:opacity-60 ${
+            className={`flex h-7 items-center gap-1 rounded-full px-2 text-[11px] font-semibold transition duration-200 active:scale-95 disabled:opacity-60 ${
               aiEnabled
-                ? "bg-white text-green-700"
+                ? "bg-white text-[#287421] shadow-sm"
                 : "bg-white/10 text-white/70 hover:bg-white/20 hover:text-white"
             }`}
           >
@@ -287,7 +297,7 @@ export default function ChatWidget() {
           <button
             type="button"
             onClick={closeChat}
-            className="flex h-7 w-7 items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white"
+            className="flex h-7 w-7 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/15 hover:text-white"
             aria-label="Đóng khung chat"
           >
             <X className="h-4 w-4" />
@@ -296,34 +306,38 @@ export default function ChatWidget() {
       </div>
 
       {toast && (
-        <div
-          role="status"
-          className="absolute left-1/2 top-14 z-20 w-max max-w-[90%] -translate-x-1/2 rounded-full bg-slate-800 px-3.5 py-1.5 text-center text-xs text-white shadow-lg"
-        >
-          {toast}
+        // The wrapper does the centring, so the pill is free to animate in.
+        <div className="pointer-events-none absolute inset-x-0 top-14 z-20 flex justify-center px-3">
+          <div
+            key={toast}
+            role="status"
+            className="w-max max-w-[90%] animate-toast-in rounded-full bg-black/80 px-3.5 py-1.5 text-center text-xs text-white shadow-lg backdrop-blur"
+          >
+            {toast}
+          </div>
         </div>
       )}
 
-      <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto bg-slate-50 px-3 py-4">
+      <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto bg-page px-3 py-4">
         {messages.map((m) => {
           // System lines (e.g. the AI being switched on/off) are notes in the
           // thread, not somebody's message bubble.
           if (m.type === "system") {
             return (
-              <p key={m.id} className="px-4 text-center text-[11px] text-slate-400">
+              <p key={m.id} className="animate-fade-in px-4 text-center text-[11px] text-gray-400">
                 {m.content}
               </p>
             );
           }
           const hasReactions = m.reactions.total > 0;
           return (
-            <div key={m.id} className={`flex ${m.is_myself ? "justify-end" : "justify-start"}`}>
+            <div key={m.id} className={`flex animate-msg-in ${m.is_myself ? "justify-end" : "justify-start"}`}>
               <div className={`group relative max-w-[80%] ${m.is_myself ? "items-end" : "items-start"} flex flex-col gap-0.5`}>
                 {!m.is_myself && (
-                  <span className="px-1 text-[11px] font-medium text-slate-500">
+                  <span className="px-1 text-[11px] font-medium text-gray-500">
                     {m.sender.profile_name}
                     {m.sender.is_ai && (
-                      <span className="ml-1 rounded bg-green-100 px-1 py-px text-[10px] font-semibold text-green-700">
+                      <span className="ml-1 rounded bg-primary-50 px-1 py-px text-[10px] font-semibold text-brand-strong">
                         AI
                       </span>
                     )}
@@ -335,14 +349,14 @@ export default function ChatWidget() {
                   <img
                     src={m.file_url}
                     alt="Hình ảnh đính kèm"
-                    className="max-w-[200px] rounded-2xl border border-slate-200 object-cover"
+                    className="max-w-[200px] rounded-2xl border border-card-border object-cover"
                   />
                 ) : (
                   <div
                     className={`rounded-2xl px-3.5 py-2 text-sm ${
                       m.is_myself
-                        ? "rounded-br-sm bg-green-600 text-white"
-                        : "rounded-bl-sm bg-white text-slate-700 shadow-sm"
+                        ? "rounded-br-sm bg-primary-500 text-white"
+                        : "rounded-bl-sm border border-card-border bg-surface text-gray-800 shadow-card"
                     }`}
                   >
                     {m.content}
@@ -355,7 +369,7 @@ export default function ChatWidget() {
                     {m.reactions.summary.map((r) => (
                       <span
                         key={r.type}
-                        className="rounded-full border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] shadow-sm"
+                        className="rounded-full border border-card-border bg-popover px-1.5 py-0.5 text-[11px] shadow-sm"
                       >
                         {REACTION_TYPES.find((rt) => rt.type === r.type)?.emoji} {r.count}
                       </span>
@@ -367,7 +381,7 @@ export default function ChatWidget() {
                 <button
                   type="button"
                   onClick={() => setPickerFor((cur) => (cur === m.id ? null : m.id))}
-                  className={`absolute top-0 flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:text-green-600 group-hover:opacity-100 ${
+                  className={`absolute top-0 flex h-6 w-6 items-center justify-center rounded-full border border-card-border bg-popover text-gray-400 opacity-0 shadow-sm transition-opacity hover:text-brand group-hover:opacity-100 [@media(hover:none)]:opacity-70 ${
                     m.is_myself ? "-left-7" : "-right-7"
                   }`}
                   aria-label="Thả cảm xúc"
@@ -377,7 +391,7 @@ export default function ChatWidget() {
 
                 {pickerFor === m.id && (
                   <div
-                    className={`absolute bottom-full z-10 mb-1 flex gap-0.5 rounded-full border border-slate-200 bg-white p-1 shadow-lg ${
+                    className={`absolute bottom-full z-10 mb-1 flex animate-pop-in gap-0.5 rounded-full border border-card-border bg-popover p-1 shadow-lg ${
                       m.is_myself ? "right-0" : "left-0"
                     }`}
                   >
@@ -388,7 +402,7 @@ export default function ChatWidget() {
                         title={label}
                         onClick={() => handleReact(m.id, type)}
                         className={`flex h-7 w-7 items-center justify-center rounded-full text-base transition-transform hover:scale-125 ${
-                          m.reactions.my_reactions.includes(type) ? "bg-green-50" : ""
+                          m.reactions.my_reactions.includes(type) ? "bg-primary-50" : ""
                         }`}
                       >
                         {emoji}
@@ -401,11 +415,19 @@ export default function ChatWidget() {
           );
         })}
         {showAiPending && (
-          <p className="px-1 text-xs italic text-slate-400">Yoyo AI đang trả lời...</p>
+          // Bouncing dots, as the main site's chat shows someone typing.
+          <div className="flex animate-msg-in items-center gap-2 px-1 text-xs text-gray-500">
+            <span className="flex items-center gap-1 rounded-2xl rounded-bl-sm border border-card-border bg-surface px-3 py-2.5 shadow-card">
+              <span className="typing-dot h-1.5 w-1.5 rounded-full bg-gray-400" />
+              <span className="typing-dot h-1.5 w-1.5 rounded-full bg-gray-400" />
+              <span className="typing-dot h-1.5 w-1.5 rounded-full bg-gray-400" />
+            </span>
+            Yoyo AI đang trả lời...
+          </div>
         )}
       </div>
 
-      <form onSubmit={handleSend} className="flex items-center gap-2 border-t border-slate-100 p-3">
+      <form onSubmit={handleSend} className="flex items-center gap-2 border-t border-gray-100 p-3">
         <input
           ref={fileInputRef}
           type="file"
@@ -417,7 +439,7 @@ export default function ChatWidget() {
           type="button"
           onClick={handlePickImage}
           disabled={uploadingImage}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 hover:text-green-600 disabled:cursor-not-allowed disabled:text-slate-300"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-gray-500 transition-colors hover:bg-gray-100 hover:text-brand disabled:cursor-not-allowed disabled:text-gray-300"
           aria-label="Gửi hình ảnh"
         >
           <ImageIcon className="h-4 w-4" />
@@ -427,12 +449,12 @@ export default function ChatWidget() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Nhập tin nhắn..."
-          className="flex-1 rounded-xl bg-slate-100 px-3.5 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-green-600/30"
+          className="min-w-0 flex-1 rounded-xl border border-transparent bg-gray-100 px-3.5 py-2.5 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
         />
         <button
           type="submit"
           disabled={!input.trim() || sending}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-green-600 text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-slate-200"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-500 text-white transition duration-200 hover:bg-primary-600 active:scale-90 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 disabled:active:scale-100"
           aria-label="Gửi tin nhắn"
         >
           <Send className="h-4 w-4" />

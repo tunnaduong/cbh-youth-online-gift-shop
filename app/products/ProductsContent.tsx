@@ -2,11 +2,9 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { Search, ShoppingCart, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
-import Header from "../components/Header";
-import ProductThumb from "../components/ProductThumb";
-import Price from "../components/Price";
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
+import EmptyState from "../components/ui/EmptyState";
+import ProductCard, { ProductCardSkeleton, productGrid } from "../components/ui/ProductCard";
 import { getIconForSlug, AllCategoriesIcon } from "../lib/categoryIcons";
 import {
   getShopCategories,
@@ -14,12 +12,18 @@ import {
   type ShopCategory,
   type ShopProduct,
 } from "../lib/shop";
-import { useCart } from "../contexts/CartContext";
+import { btnPrimary, input, pageTitle } from "../lib/ui";
+
+const grid = `${productGrid} lg:grid-cols-4 xl:grid-cols-5`;
+
+const pageBtn =
+  "flex h-10 w-10 items-center justify-center rounded-xl text-sm font-semibold transition duration-200 active:scale-95";
+const pageBtnIdle =
+  "border border-gray-200 bg-surface text-gray-600 hover:border-primary-300 hover:bg-primary-50 hover:text-brand-strong";
 
 export default function ProductsContent() {
   const router = useRouter();
   const params = useSearchParams();
-  const { addItem } = useCart();
 
   const [categories, setCategories] = useState<ShopCategory[]>([]);
   const [products, setProducts] = useState<ShopProduct[]>([]);
@@ -70,137 +74,130 @@ export default function ProductsContent() {
   };
 
   return (
-    <>
-      <Header />
-      <main className="mx-auto w-full max-w-[1280px] px-4 py-6 sm:px-6">
-        {/* Page title + search */}
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-extrabold text-slate-800">Sản phẩm</h1>
+    <main className="mx-auto w-full max-w-[1240px] px-3 pb-8 pt-5 sm:px-4 lg:px-6 lg:pt-7">
+      {/* Page title + search */}
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className={pageTitle}>Sản phẩm</h1>
+          {/* Keeps its line while loading, so the layout doesn't jump. */}
+          <p className="mt-1 min-h-5 text-sm text-gray-500">
             {!loading && (
-              <p className="mt-0.5 text-sm text-slate-500">
+              <span className="animate-fade-in">
                 {total.toLocaleString("vi-VN")} sản phẩm
                 {search && (
-                  <> cho &ldquo;<span className="font-medium text-slate-700">{search}</span>&rdquo;</>
+                  <> cho &ldquo;<span className="font-medium text-gray-800">{search}</span>&rdquo;</>
                 )}
-              </p>
+              </span>
             )}
-          </div>
-
-          <form onSubmit={handleSearch} className="relative w-full sm:w-72">
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Tìm kiếm sản phẩm..."
-              className="w-full rounded-full border border-slate-200 bg-white py-2.5 pl-4 pr-10 text-sm text-slate-700 placeholder:text-slate-400 focus:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-600/20"
-            />
-            <button
-              type="submit"
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-green-600"
-              aria-label="Tìm kiếm"
-            >
-              <Search className="h-4 w-4" />
-            </button>
-          </form>
+          </p>
         </div>
 
-        {/* Category filter pills — horizontal scroll on mobile */}
-        <div className="-mx-4 mb-6 px-4 sm:mx-0 sm:px-0">
-          <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <form onSubmit={handleSearch} className="relative w-full sm:w-80">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Tìm kiếm sản phẩm..."
+            aria-label="Tìm kiếm sản phẩm"
+            className={`${input} h-11 pl-10`}
+          />
+        </form>
+      </div>
+
+      {/* Category filter pills — horizontal scroll on mobile */}
+      <div className="-mx-3 mb-6 px-3 sm:mx-0 sm:px-0">
+        <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-1">
+          <CategoryPill
+            label="Tất cả"
+            Icon={AllCategoriesIcon}
+            active={categoryId === null}
+            onClick={() => pushParams({ category: null })}
+          />
+          {categories.map((c) => (
             <CategoryPill
-              label="Tất cả"
-              Icon={AllCategoriesIcon}
-              active={categoryId === null}
-              onClick={() => pushParams({ category: null })}
+              key={c.id}
+              label={c.name}
+              Icon={getIconForSlug(c.slug)}
+              active={categoryId === c.id}
+              onClick={() => pushParams({ category: String(c.id) })}
             />
-            {categories.map((c) => (
-              <CategoryPill
-                key={c.id}
-                label={c.name}
-                Icon={getIconForSlug(c.slug)}
-                active={categoryId === c.id}
-                onClick={() => pushParams({ category: String(c.id) })}
-              />
-            ))}
-          </div>
+          ))}
         </div>
+      </div>
 
-        {/* Product grid */}
-        {loading ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} className="animate-pulse overflow-hidden rounded-2xl border border-slate-100 bg-white">
-                <div className="aspect-square w-full bg-slate-100" />
-                <div className="space-y-2 p-3.5">
-                  <div className="h-3 w-3/4 rounded bg-slate-100" />
-                  <div className="h-3 w-1/3 rounded bg-slate-100" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : products.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-slate-100 bg-white p-16 text-center">
-            <SlidersHorizontal className="h-10 w-10 text-slate-300" />
-            <p className="text-sm text-slate-500">Không tìm thấy sản phẩm nào.</p>
-            <button
-              onClick={() => { setSearchInput(""); pushParams({ search: null, category: null }); }}
-              className="mt-1 rounded-xl bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-700"
-            >
-              Xem tất cả
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} onAdd={() => addItem(product)} />
-            ))}
-          </div>
-        )}
+      {/* Product grid */}
+      {loading ? (
+        <div className={grid}>
+          {Array.from({ length: 10 }).map((_, i) => (
+            <ProductCardSkeleton key={i} />
+          ))}
+        </div>
+      ) : products.length === 0 ? (
+        <EmptyState
+          icon={SlidersHorizontal}
+          title="Không tìm thấy sản phẩm nào."
+          hint="Thử từ khóa khác hoặc xem tất cả sản phẩm."
+        >
+          <button
+            type="button"
+            onClick={() => { setSearchInput(""); pushParams({ search: null, category: null }); }}
+            className={`${btnPrimary} h-10 px-5`}
+          >
+            Xem tất cả
+          </button>
+        </EmptyState>
+      ) : (
+        <div className={`${grid} stagger`}>
+          {products.map((product, i) => (
+            <ProductCard key={product.id} product={product} index={i} />
+          ))}
+        </div>
+      )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="mt-8 flex items-center justify-center gap-2">
-            <button
-              onClick={() => pushParams({ page: String(page - 1) })}
-              disabled={page <= 1}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:border-green-500 hover:text-green-700 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            {Array.from({ length: totalPages }).map((_, i) => {
-              const p = i + 1;
-              if (p === 1 || p === totalPages || Math.abs(p - page) <= 1) {
-                return (
-                  <button
-                    key={p}
-                    onClick={() => pushParams({ page: p === 1 ? null : String(p) })}
-                    className={`flex h-9 w-9 items-center justify-center rounded-xl text-sm font-semibold transition-colors ${
-                      p === page
-                        ? "bg-green-600 text-white"
-                        : "border border-slate-200 text-slate-600 hover:border-green-500 hover:text-green-700"
-                    }`}
-                  >
-                    {p}
-                  </button>
-                );
-              }
-              if (Math.abs(p - page) === 2) {
-                return <span key={p} className="text-slate-400">…</span>;
-              }
-              return null;
-            })}
-            <button
-              onClick={() => pushParams({ page: String(page + 1) })}
-              disabled={page >= totalPages}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:border-green-500 hover:text-green-700 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        )}
-      </main>
-    </>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-8 flex items-center justify-center gap-2">
+          <button
+            onClick={() => pushParams({ page: String(page - 1) })}
+            disabled={page <= 1}
+            aria-label="Trang trước"
+            className={`${pageBtn} ${pageBtnIdle} disabled:cursor-not-allowed disabled:opacity-40`}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          {Array.from({ length: totalPages }).map((_, i) => {
+            const p = i + 1;
+            if (p === 1 || p === totalPages || Math.abs(p - page) <= 1) {
+              return (
+                <button
+                  key={p}
+                  onClick={() => pushParams({ page: p === 1 ? null : String(p) })}
+                  aria-current={p === page ? "page" : undefined}
+                  className={`${pageBtn} ${
+                    p === page ? "bg-primary-500 text-white shadow-glow" : pageBtnIdle
+                  }`}
+                >
+                  {p}
+                </button>
+              );
+            }
+            if (Math.abs(p - page) === 2) {
+              return <span key={p} className="text-gray-400">…</span>;
+            }
+            return null;
+          })}
+          <button
+            onClick={() => pushParams({ page: String(page + 1) })}
+            disabled={page >= totalPages}
+            aria-label="Trang sau"
+            className={`${pageBtn} ${pageBtnIdle} disabled:cursor-not-allowed disabled:opacity-40`}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+    </main>
   );
 }
 
@@ -213,73 +210,19 @@ function CategoryPill({
   onClick: () => void;
 }) {
   return (
+    // The main site's filter pills: solid green when chosen, grey otherwise.
     <button
+      type="button"
       onClick={onClick}
-      className={`flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+      aria-pressed={active}
+      className={`flex h-[42px] shrink-0 items-center gap-1.5 rounded-full px-5 text-sm font-medium transition duration-200 active:scale-95 ${
         active
-          ? "border-green-600 bg-green-600 text-white"
-          : "border-slate-200 bg-white text-slate-600 hover:border-green-500 hover:text-green-700"
+          ? "bg-primary-500 text-white shadow-glow"
+          : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900"
       }`}
     >
-      <Icon className="h-4 w-4" strokeWidth={1.6} />
+      <Icon className="h-4 w-4" strokeWidth={2} />
       {label}
     </button>
-  );
-}
-
-function ProductCard({ product, onAdd }: { product: ShopProduct; onAdd: () => void }) {
-  return (
-    <div className="group overflow-hidden rounded-2xl border border-slate-100 bg-white transition-shadow hover:shadow-md">
-      <Link href={`/product/${product.id}`} className="block">
-        <div className="relative">
-          <ProductThumb
-            icon={getIconForSlug(product.category?.slug)}
-            imageUrl={product.image_url}
-            alt={product.name}
-            className="aspect-square w-full"
-          />
-          {product.stock <= 0 && (
-            <span className="absolute left-2.5 top-2.5 rounded-lg bg-slate-700 px-2 py-1 text-[11px] font-semibold text-white">
-              Hết hàng
-            </span>
-          )}
-          {product.category && (
-            <span className="absolute right-2.5 top-2.5 rounded-lg bg-white/90 px-2 py-1 text-[11px] font-medium text-slate-600 backdrop-blur-sm">
-              {product.category.name}
-            </span>
-          )}
-        </div>
-      </Link>
-
-      <div className="p-3.5">
-        <Link href={`/product/${product.id}`}>
-          <p className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold text-slate-800 hover:text-green-700">
-            {product.name}
-          </p>
-        </Link>
-        <p className="mt-1.5">
-          <Price amount={product.price} showPoints />
-        </p>
-        <p className="mt-1 text-xs text-slate-400">{product.stock} còn lại</p>
-
-        {product.variants_count ? (
-          <Link
-            href={`/product/${product.id}`}
-            className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-green-600 py-2 text-xs font-semibold text-white transition-colors hover:bg-green-700"
-          >
-            Chọn phân loại
-          </Link>
-        ) : (
-          <button
-            onClick={onAdd}
-            disabled={product.stock <= 0}
-            className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-green-600 py-2 text-xs font-semibold text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
-          >
-            <ShoppingCart className="h-3.5 w-3.5" />
-            Thêm vào giỏ
-          </button>
-        )}
-      </div>
-    </div>
   );
 }

@@ -1,4 +1,5 @@
 import { PenTool, Leaf, HeartHandshake, Award } from "lucide-react";
+import { card } from "../lib/ui";
 
 const features = [
   {
@@ -25,15 +26,15 @@ const features = [
 
 export default function FeaturesBar() {
   return (
-    <div className="grid grid-cols-1 gap-3 rounded-2xl bg-amber-50/60 p-5 sm:grid-cols-2 lg:grid-cols-4">
+    <div className={`${card} grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-4`}>
       {features.map(({ icon: Icon, title, desc }) => (
-        <div key={title} className="flex items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-green-600">
-            <Icon className="h-5 w-5" strokeWidth={1.6} />
+        <div key={title} className="group flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-brand transition duration-200 group-hover:-translate-y-0.5 group-hover:shadow-md">
+            <Icon className="h-5 w-5" strokeWidth={2} />
           </span>
-          <div>
-            <p className="text-sm font-semibold text-slate-800">{title}</p>
-            <p className="text-xs text-slate-500">{desc}</p>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-gray-900">{title}</p>
+            <p className="text-xs leading-relaxed text-gray-500">{desc}</p>
           </div>
         </div>
       ))}

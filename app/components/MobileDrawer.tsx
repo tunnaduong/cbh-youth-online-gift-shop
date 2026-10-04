@@ -35,7 +35,7 @@ export default function MobileDrawer({
       <div
         aria-hidden
         onClick={onClose}
-        className={`fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+        className={`fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ease-out lg:hidden ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       />
@@ -46,15 +46,15 @@ export default function MobileDrawer({
         role="dialog"
         aria-modal="true"
         aria-label="Thông tin giỏ hàng"
-        className={`fixed right-0 top-0 z-50 flex h-full w-[85vw] max-w-xs flex-col gap-4 overflow-y-auto bg-slate-50 p-4 shadow-2xl transition-transform duration-300 ease-in-out lg:hidden ${
+        className={`fixed right-0 top-0 z-50 flex h-full w-[85vw] max-w-xs flex-col gap-4 overflow-y-auto bg-page p-4 shadow-2xl transition-transform duration-300 ease-out lg:hidden ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-slate-800">Thông tin</h2>
+          <h2 className="text-[15px] font-semibold text-gray-900">Thông tin</h2>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-200"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
             aria-label="Đóng"
           >
             <X className="h-4 w-4" />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "../contexts/AuthContext";
+import { PageSpinner } from "./ui/Spinner";
 
 /**
  * Giftshop is members-only - only logged-in CBH Youth Online accounts can
@@ -11,13 +12,7 @@ import { useAuth } from "../contexts/AuthContext";
 export default function HomeGate({ children }: { children: React.ReactNode }) {
   const { loading } = useAuth();
 
-  if (loading) {
-    return (
-      <div className="mx-auto flex w-full max-w-[1280px] items-center justify-center px-4 sm:px-6 py-24">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-green-600" />
-      </div>
-    );
-  }
+  if (loading) return <PageSpinner />;
 
   return <>{children}</>;
 }

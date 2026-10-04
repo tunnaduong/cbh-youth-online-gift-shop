@@ -27,13 +27,13 @@ export default function Price({
 
   return (
     <span className="inline-flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
-      <span className={lg ? "text-2xl font-bold text-green-700" : "font-bold text-green-600"}>
+      <span className={lg ? "text-2xl font-bold text-brand-strong" : "font-bold text-brand"}>
         {prefix}
         {vnd(final)}
       </span>
       {percent > 0 && (
         <>
-          <span className={`text-slate-400 line-through ${lg ? "text-base" : "text-xs"}`}>
+          <span className={`text-gray-400 line-through ${lg ? "text-base" : "text-xs"}`}>
             {vnd(amount)}
           </span>
           <span className="rounded bg-red-50 px-1.5 py-0.5 text-[11px] font-semibold text-red-500">
@@ -42,7 +42,7 @@ export default function Price({
         </>
       )}
       {showPoints && (
-        <span className={lg ? "text-sm text-green-600/80" : "text-xs font-medium text-slate-400"}>
+        <span className={lg ? "text-sm text-brand/80" : "text-xs font-medium text-gray-400"}>
           · {vndToPoints(final).toLocaleString("vi-VN")} điểm
         </span>
       )}

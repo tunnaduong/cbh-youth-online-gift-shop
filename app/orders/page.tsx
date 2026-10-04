@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { PackageSearch } from "lucide-react";
-import Header from "../components/Header";
+import { LogIn, PackageSearch } from "lucide-react";
+import EmptyState from "../components/ui/EmptyState";
+import { PageSpinner } from "../components/ui/Spinner";
+import { btnPrimary, card, pageTitle, skeleton, stagger } from "../lib/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { getLoginUrl } from "../lib/auth";
 import { cancelShopOrder, getMyShopOrders, type ShopOrder } from "../lib/shop";
@@ -12,8 +14,8 @@ const STATUS_LABEL: Record<string, { label: string; className: string }> = {
   pending: { label: "Chờ xử lý", className: "bg-amber-50 text-amber-600" },
   processing: { label: "Đang xử lý", className: "bg-blue-50 text-blue-600" },
   shipped: { label: "Đang giao", className: "bg-indigo-50 text-indigo-600" },
-  completed: { label: "Hoàn tất", className: "bg-green-50 text-green-600" },
-  cancelled: { label: "Đã hủy", className: "bg-slate-100 text-slate-500" },
+  completed: { label: "Hoàn tất", className: "bg-primary-50 text-brand" },
+  cancelled: { label: "Đã hủy", className: "bg-gray-100 text-gray-500" },
 };
 
 const PAYMENT_METHOD_LABEL: Record<string, string> = {
@@ -24,7 +26,7 @@ const PAYMENT_METHOD_LABEL: Record<string, string> = {
 
 const PAYMENT_STATUS_LABEL: Record<string, { label: string; className: string }> = {
   pending: { label: "Chưa thanh toán", className: "text-amber-600" },
-  paid: { label: "Đã thanh toán", className: "text-green-600" },
+  paid: { label: "Đã thanh toán", className: "text-brand" },
   failed: { label: "Thất bại", className: "text-red-500" },
 };
 
@@ -68,67 +70,68 @@ export default function OrdersPage() {
     }
   };
 
+
   return (
-    <>
-      <Header />
-      <main className="mx-auto w-full max-w-[800px] px-4 sm:px-6 py-8">
-        <h1 className="mb-6 text-2xl font-extrabold text-slate-800">
-          Đơn hàng của tôi
-        </h1>
+    <main className="mx-auto w-full max-w-[800px] px-3 pb-8 pt-5 sm:px-4 lg:pt-7">
+      <h1 className={`${pageTitle} mb-5`}>Đơn hàng của tôi</h1>
 
-        {authLoading ? (
-          <div className="flex justify-center py-16">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-green-600" />
-          </div>
-        ) : !loggedIn ? (
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white p-10 text-center">
-            <p className="text-sm text-slate-500">
-              Đăng nhập để xem đơn hàng của bạn.
+      {authLoading ? (
+        <PageSpinner />
+      ) : !loggedIn ? (
+        <EmptyState icon={LogIn} title="Đăng nhập để xem đơn hàng của bạn.">
+          <a href={getLoginUrl()} className={`${btnPrimary} h-11 px-6`}>
+            Đăng nhập để tiếp tục
+          </a>
+        </EmptyState>
+      ) : loading ? (
+        // Order-shaped placeholders rather than a bare spinner.
+        <div className="flex flex-col gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className={`${card} p-5`}>
+              <div className="flex items-center justify-between">
+                <div className={`${skeleton} h-4 w-24`} />
+                <div className={`${skeleton} h-6 w-20 rounded-full`} />
+              </div>
+              <div className={`${skeleton} mt-4 h-3.5 w-3/4`} />
+              <div className={`${skeleton} mt-2 h-3.5 w-1/2`} />
+              <div className="my-3 border-t border-gray-100" />
+              <div className="flex items-center justify-between">
+                <div className={`${skeleton} h-3 w-32`} />
+                <div className={`${skeleton} h-5 w-24`} />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : orders.length === 0 ? (
+        <EmptyState icon={PackageSearch} title="Bạn chưa có đơn hàng nào.">
+          <Link href="/#catalog" className={`${btnPrimary} h-11 px-6`}>
+            Bắt đầu mua sắm
+          </Link>
+        </EmptyState>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {error && (
+            <p className="animate-slide-down rounded-xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-500">
+              {error}
             </p>
-            <a
-              href={getLoginUrl()}
-              className="mt-1 rounded-xl bg-green-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-700"
-            >
-              Đăng nhập để tiếp tục
-            </a>
-          </div>
-        ) : loading ? (
-          <div className="flex justify-center py-16">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-green-600" />
-          </div>
-        ) : orders.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white p-12 text-center">
-            <PackageSearch className="h-10 w-10 text-slate-300" />
-            <p className="text-sm text-slate-500">Bạn chưa có đơn hàng nào.</p>
-            <Link
-              href="/#catalog"
-              className="mt-1 rounded-xl bg-green-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-700"
-            >
-              Bắt đầu mua sắm
-            </Link>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {error && (
-              <p className="rounded-xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-500">
-                {error}
-              </p>
-            )}
+          )}
 
-            {orders.map((order) => {
+          <div className="stagger flex flex-col gap-4">
+            {orders.map((order, i) => {
               const status = STATUS_LABEL[order.status] ?? {
                 label: order.status,
-                className: "bg-slate-100 text-slate-500",
+                className: "bg-gray-100 text-gray-500",
               };
               const paymentStatus = PAYMENT_STATUS_LABEL[order.payment_status];
 
               return (
                 <div
                   key={order.id}
-                  className="rounded-2xl border border-slate-200 bg-white p-5"
+                  style={stagger(i)}
+                  className={`${card} p-4 transition duration-200 hover:border-primary-300 hover:shadow-lift sm:p-5`}
                 >
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-sm font-bold text-slate-800">
+                    <span className="text-[15px] font-semibold text-gray-900">
                       Đơn #{order.id}
                     </span>
                     <span
@@ -142,25 +145,25 @@ export default function OrdersPage() {
                     {order.items?.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-center justify-between text-sm"
+                        className="flex items-start justify-between gap-3 text-sm"
                       >
-                        <span className="text-slate-600">
+                        <span className="min-w-0 text-gray-700">
                           {item.product?.name ?? `Sản phẩm #${item.product_id}`}
                           {item.variant_label && (
-                            <span className="text-slate-400"> ({item.variant_label})</span>
+                            <span className="text-gray-400"> ({item.variant_label})</span>
                           )}{" "}
-                          <span className="text-slate-400">x{item.quantity}</span>
+                          <span className="text-gray-400">x{item.quantity}</span>
                         </span>
-                        <span className="font-medium text-slate-800">
+                        <span className="shrink-0 font-medium tabular-nums text-gray-900">
                           {(item.price * item.quantity).toLocaleString("vi-VN")}đ
                         </span>
                       </div>
                     ))}
                   </div>
 
-                  <div className="my-3 border-t border-slate-100" />
+                  <div className="my-3 border-t border-gray-100" />
 
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
                     <span>
                       {PAYMENT_METHOD_LABEL[order.payment_method] ?? order.payment_method}
                       {paymentStatus && (
@@ -169,7 +172,7 @@ export default function OrdersPage() {
                         </span>
                       )}
                     </span>
-                    <span className="text-base font-extrabold text-green-600">
+                    <span className="text-base font-extrabold tabular-nums text-brand">
                       {order.total_amount.toLocaleString("vi-VN")}đ
                     </span>
                   </div>
@@ -179,7 +182,7 @@ export default function OrdersPage() {
                       type="button"
                       onClick={() => handleCancel(order.id)}
                       disabled={cancellingId === order.id}
-                      className="mt-3 text-xs font-semibold text-red-500 hover:text-red-600 disabled:text-slate-300"
+                      className="mt-3 rounded-lg border border-red-500/30 px-3 py-1.5 text-xs font-semibold text-red-500 transition duration-200 hover:bg-red-50 active:scale-95 disabled:border-gray-200 disabled:text-gray-300"
                     >
                       {cancellingId === order.id ? "Đang hủy..." : "Hủy đơn"}
                     </button>
@@ -188,8 +191,8 @@ export default function OrdersPage() {
               );
             })}
           </div>
-        )}
-      </main>
-    </>
+        </div>
+      )}
+    </main>
   );
 }

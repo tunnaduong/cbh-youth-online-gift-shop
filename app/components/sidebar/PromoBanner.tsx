@@ -11,11 +11,16 @@ export default function PromoBanner() {
   const appMode = useAppMode();
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-green-600 p-5 text-white">
-      <Gift className="pointer-events-none absolute -bottom-4 -right-4 h-28 w-28 text-white/15" strokeWidth={1} />
+    // The main site's green banner strip. Everything on it is white on green
+    // in both themes, hence the fixed hex colours.
+    <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#2E9A2A] via-[#3FA836] to-[#2E9A2A] p-5 text-white shadow-card">
+      <Gift
+        className="pointer-events-none absolute -bottom-4 -right-4 h-28 w-28 text-white/15 transition-transform duration-500 group-hover:-rotate-12 group-hover:scale-110"
+        strokeWidth={1}
+      />
       <div className="relative">
         <h3 className="text-base font-bold">Ưu đãi học sinh</h3>
-        <p className="mt-1.5 text-sm text-green-50/90">
+        <p className="mt-1.5 text-sm text-white/90">
           {verified
             ? `Tài khoản học sinh đã xác minh - bạn đang được giảm ${percent}% cho tất cả sản phẩm`
             : "Giảm 10% cho tất cả sản phẩm khi xác minh tài khoản học sinh"}
@@ -24,9 +29,9 @@ export default function PromoBanner() {
         {/* Held back until the status is known, so a verified student never
             sees "Xác minh ngay" flash up and then disappear. */}
         {loading ? (
-          <div className="mt-4 h-[42px] w-36 animate-pulse rounded-xl bg-white/20" />
+          <div className="mt-4 h-10 w-36 animate-pulse rounded-xl bg-white/20" />
         ) : verified ? (
-          <span className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-bold text-white">
+          <span className="mt-4 inline-flex animate-fade-in items-center gap-1.5 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-bold text-white backdrop-blur">
             <CheckCircle2 className="h-4 w-4" />
             Đã xác minh
           </span>
@@ -39,7 +44,7 @@ export default function PromoBanner() {
         ) : (
           <Link
             href="https://chuyenbienhoa.com/settings?tab=student-kyc"
-            className="mt-4 inline-block rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-green-600 transition-colors hover:bg-green-50"
+            className="mt-4 inline-block animate-fade-in rounded-xl bg-white px-4 py-2 text-sm font-semibold text-[#287421] shadow-sm transition duration-200 hover:bg-[#f3fbf2] active:scale-[0.97]"
           >
             Xác minh ngay
           </Link>

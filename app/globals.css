@@ -1,19 +1,68 @@
 @import "tailwindcss";
 
-:root {
-  --background: #f8fafc;
-  --foreground: #1e293b;
+/*
+ * Design tokens. The values are the main site's (cbh-youth-online-next-js:
+ * tailwind.config.js and src/app/globals.css), so the shop and the forum read
+ * as one product: the brand green #319527, neutral greys instead of the
+ * blue-grey slate, #F8F8F8 pages with white cards, soft green-tinted shadows.
+ *
+ * Components use these names only - `primary-*` and `brand` for green,
+ * `gray-*` for neutrals, `page` / `surface` / `popover` / `chip` / `nav` for
+ * backgrounds - never raw `white` or `slate`, because the dark theme below
+ * works by redefining them.
+ */
+@theme {
+  --color-primary-50: #f3fbf2;
+  --color-primary-100: #e3f8e0;
+  --color-primary-200: #c7f0c2;
+  --color-primary-300: #9ae392;
+  --color-primary-400: #65cd5b;
+  --color-primary-500: #319527;
+  --color-primary-600: #287421;
+  --color-primary-700: #245c1f;
+  --color-primary-800: #1e4c1b;
+  --color-primary-900: #0b290a;
+
+  /* The main site overrides these two greys to neutral ones. */
+  --color-gray-600: #585858;
+  --color-gray-700: #3c3c3c;
+
+  --color-page: #f8f8f8;
+  --color-surface: #ffffff; /* cards */
+  --color-popover: #ffffff; /* menus, pickers, toasts */
+  --color-chip: #f3f5f3; /* inset tiles, chips */
+  --color-nav: #ffffff; /* header, used at 90% over a blur */
+  --color-card-border: #ebefea;
+  /* Green *text*: lighter in the dark theme, where #319527 is too dim to read. */
+  --color-brand: #319527;
+  --color-brand-strong: #287421;
+
+  --shadow-card: 0 1px 3px rgba(16, 24, 40, 0.04);
+  --shadow-lift: 0 8px 20px rgba(20, 70, 20, 0.12);
+  --shadow-glow: 0 4px 12px rgba(49, 149, 39, 0.28);
+  --shadow-hero: 0 4px 14px rgba(20, 70, 20, 0.15);
+
+  --animate-fade-up: fade-up 0.5s ease-out both;
+  --animate-fade-in: fade-in 0.3s ease-out both;
+  --animate-pop-in: pop-in 0.2s ease-out both;
+  --animate-chat-in: pop-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-slide-down: slide-down 0.25s ease-out both;
+  --animate-toast-in: toast-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-toast-out: toast-out 0.2s ease-in both;
+  --animate-msg-in: msg-in 0.25s ease-out both;
+  --animate-bump: bump 0.35s ease-out;
+  --animate-check-pop: check-pop 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-float-slow: float 11s ease-in-out infinite reverse;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-be-vietnam-pro);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-page);
+  color: var(--color-gray-800);
 }
 
 /*
@@ -29,51 +78,64 @@ body {
 }
 
 /*
- * Dark theme: every component in this app is built with the default
- * Tailwind slate palette (bg-white cards, border-slate-200, text-slate-800,
- * etc) rather than dark:-prefixed classes. Tailwind v4 utilities read their
- * color from a CSS custom property (e.g. `.border-slate-200 { border-color:
- * var(--color-slate-200) }`), so redefining the palette's variables here -
- * scoped to a `.dark` class on <html> - re-themes the whole app without
- * touching every component. `.dark` is applied by ThemeContext (see
- * app/contexts/ThemeContext.tsx), which resolves the user's light/dark/auto
- * setting (default: auto, i.e. follow the OS) to a concrete class.
+ * Dark theme: components carry no dark:-prefixed classes. Tailwind v4
+ * utilities read their color from a CSS custom property (e.g.
+ * `.border-gray-200 { border-color: var(--color-gray-200) }`), so redefining
+ * the variables here - scoped to a `.dark` class on <html> - re-themes the
+ * whole app without touching every component. `.dark` is applied by
+ * ThemeContext (see app/contexts/ThemeContext.tsx), which resolves the user's
+ * light/dark/auto setting (default: auto, i.e. follow the OS) to a concrete
+ * class. The palette is the main site's charcoal one (#2c2f2e page, #3c3c3c
+ * cards, neutral-600 borders).
+ *
+ * `white` itself is deliberately NOT redefined: it is the text on green
+ * buttons and the translucent overlays on green panels, which must stay
+ * white. Surfaces use `surface` / `popover` instead.
  */
 .dark {
-  --background: #0f172a;
-  --foreground: #e2e8f0;
+  --color-page: #2c2f2e;
+  --color-surface: #3c3c3c;
+  --color-popover: #404040;
+  --color-chip: #474747;
+  --color-nav: #2c2f2e;
+  --color-card-border: #525252;
+  --color-brand: #6bcf60;
+  --color-brand-strong: #86dc7c;
 
-  --color-white: oklch(27.9% 0.041 260.031); /* card surfaces (was slate-800) */
-  --color-slate-50: oklch(20.8% 0.042 265.755); /* subtle bg tints (was slate-900) */
-  --color-slate-100: oklch(37.2% 0.044 257.287); /* thumbnail/skeleton bg (was slate-700) */
-  --color-slate-200: oklch(44.6% 0.043 257.281); /* default borders (was slate-600) */
-  --color-slate-300: oklch(55.4% 0.046 257.417); /* disabled icons (was slate-500) */
-  --color-slate-400: oklch(70.4% 0.04 256.788); /* muted/placeholder text - unchanged */
-  --color-slate-500: oklch(70.4% 0.04 256.788); /* muted text (was slate-400) */
-  --color-slate-600: oklch(86.9% 0.022 252.894); /* body text (was slate-300) */
-  --color-slate-700: oklch(92.9% 0.013 255.508); /* emphasis text (was slate-200) */
-  --color-slate-800: oklch(96.8% 0.007 247.896); /* headings (was slate-100) */
-  --color-slate-900: oklch(98.4% 0.003 247.858); /* rarely used (was slate-50) */
+  --color-gray-50: #333635; /* subtle insets, row hover */
+  --color-gray-100: #474747; /* hover fills, skeletons, dividers */
+  --color-gray-200: #525252; /* borders */
+  --color-gray-300: #6b6b6b; /* disabled icons */
+  --color-gray-400: #8f8f8f; /* placeholders, faint text */
+  --color-gray-500: #a3a3a3; /* muted text */
+  --color-gray-600: #c4c4c4;
+  --color-gray-700: #d4d4d4; /* body text */
+  --color-gray-800: #e5e5e5;
+  --color-gray-900: #f5f5f5; /* headings */
+
+  /* Green tints used as surfaces, borders and focus rings. */
+  --color-primary-50: #2b3a2a;
+  --color-primary-100: #334a31;
+  --color-primary-200: #3d5c3a;
+  --color-primary-300: #4d7a48;
 
   /*
-   * Status/badge tints (order status chips, inline errors, promo panels)
-   * are built with the light -50 shade of each accent color. Left at their
-   * light-mode value they render as glaring pastel patches on a dark
-   * surface, so darken them the same way the slate palette is darkened
-   * above - a low-lightness, hue-matched surface that the accent's
-   * unmodified -500/600/700 text still reads clearly against.
+   * Status/badge tints (order status chips, inline errors) are built with
+   * the light -50 shade of each accent color. Left at their light-mode value
+   * they render as glaring pastel patches on a dark surface, so darken them:
+   * a low-lightness, hue-matched surface that the accent's unmodified
+   * -500/600 text still reads clearly against.
    */
-  --color-red-50: oklch(31% 0.06 17.717);
-  --color-amber-50: oklch(32% 0.065 95.277);
-  --color-green-50: oklch(30% 0.05 155.826);
-  --color-blue-50: oklch(30% 0.055 254.604);
-  --color-indigo-50: oklch(30% 0.06 272.314);
+  --color-red-50: oklch(33% 0.06 17.717);
+  --color-amber-50: oklch(34% 0.06 95.277);
+  --color-blue-50: oklch(33% 0.05 254.604);
+  --color-indigo-50: oklch(33% 0.055 272.314);
 }
 
 /* Smooth, theme-aware crossfade instead of an abrupt flip when the user
-   toggles light/dark (or the OS setting changes in "auto" mode). Scoped to
-   color-affecting properties only, so it never interferes with layout,
-   hover, or the page-transition animation below. */
+   toggles light/dark (or the OS setting changes in "auto" mode), and soft
+   colour changes on hover everywhere. Elements with their own Tailwind
+   `transition-*` utility use that instead. */
 :root {
   color-scheme: light;
 }
@@ -89,35 +151,260 @@ body {
     color 0.25s ease;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  * {
-    transition: none;
-  }
-}
+/* ------------------------------------------------------------------ */
+/* Motion. Durations follow the main site: ~150-200ms for colour and   */
+/* menus, 0.5s for content fading up, pulse/shimmer for loading.       */
+/* ------------------------------------------------------------------ */
 
-@keyframes page-enter {
+@keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(14px) scale(0.99);
-    filter: blur(4px);
-  }
-  60% {
-    filter: blur(0);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0);
+    transform: none;
   }
 }
 
-.page-transition {
-  animation: page-enter 0.42s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform;
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
+/* Menus and panels: grow out of the corner they hang from (set the corner
+   with an origin-* class on the element). */
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+}
+
+@keyframes msg-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes bump {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes check-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes check-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes typing-dot {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+  30% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+
+@keyframes route-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(0.9);
+  }
+}
+
+/* Replayed on every navigation by app/template.tsx. No `forwards` fill and
+   `transform: none` at the end, so once it has run the wrapper is an ordinary
+   box again (a lingering transform would trap position:fixed children and
+   break position:sticky inside the page). */
+.page-transition {
+  animation: fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* Scroll reveal (see components/ui/Reveal.tsx): hidden only once JS has
+   marked the element as waiting, so content is never lost without it. */
+.reveal-wait {
+  opacity: 0;
+}
+
+.reveal-show {
+  animation: fade-up 0.55s ease-out both;
+}
+
+/* Lists and grids: children fade up one after another. Each child sets its
+   position with `style={{ "--i": index }}`; the delay stops growing after a
+   dozen items so a long list doesn't keep the last ones waiting. */
+.stagger > * {
+  animation: fade-up 0.45s ease-out both;
+  animation-delay: calc(min(var(--i, 0), 12) * 45ms);
+}
+
+/* Loading placeholder for images and skeleton blocks (the main site's
+   mediaShimmer). */
+.shimmer {
+  background-color: var(--color-gray-100);
+  background-image: linear-gradient(
+    90deg,
+    var(--color-gray-100) 25%,
+    var(--color-gray-50) 50%,
+    var(--color-gray-100) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+.typing-dot {
+  animation: typing-dot 1.2s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.check-draw {
+  stroke-dasharray: 30;
+  stroke-dashoffset: 30;
+  animation: check-draw 0.35s ease-out 0.2s forwards;
+}
+
+/* Top-of-page navigation bar (components/ui/RouteProgress.tsx). */
+.route-progress {
+  height: 100%;
+  background: #319528;
+  box-shadow: 0 0 8px rgba(49, 149, 40, 0.55);
+  transform-origin: left;
+}
+
+.route-progress.is-loading {
+  animation: route-progress 8s cubic-bezier(0.1, 0.7, 0.2, 1) forwards;
+}
+
+.route-progress.is-done {
+  transform: scaleX(1);
+  opacity: 0;
+  transition:
+    transform 0.2s ease-out,
+    opacity 0.25s ease 0.15s;
+}
+
+.scrollbar-hide {
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* People who ask their system for less motion get none: every animation and
+   transition above (and Tailwind's own utilities, hence !important) ends at
+   once. */
 @media (prefers-reduced-motion: reduce) {
-  .page-transition {
-    animation: none;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+
+  .reveal-wait {
+    opacity: 1;
   }
 }
