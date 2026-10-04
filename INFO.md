@@ -3,6 +3,7 @@
 > **For AI agents.** Project map for agents working in this repo: how it connects to the sibling repos, features, structure, setup, conventions and recent work. Humans: see `README.md`. Keep this file current - add to **Recent work** and update other sections whenever you change the repo.
 
 - **Default branch: `main`** - work, commit and push there unless the user names another branch.
+- **Find code via this file first**: check the project structure / features sections below before grepping the repo by hand.
 
 The **CBH Youth Online gift shop**, served at **https://giftshop.chuyenbienhoa.com**. It sells school merchandise to members of the CBH Youth Online student forum (Trường THPT Chuyên Biên Hòa). The UI is in Vietnamese.
 
