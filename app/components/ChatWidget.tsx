@@ -14,6 +14,7 @@ import {
   type ReactionType,
 } from "../lib/chat";
 import { getSupportStatus, setSupportAi } from "../lib/shop";
+import ShopAttachments from "./chat/ShopAttachments";
 
 const POLL_INTERVAL_MS = 4000;
 
@@ -353,7 +354,7 @@ export default function ChatWidget() {
                   />
                 ) : (
                   <div
-                    className={`rounded-2xl px-3.5 py-2 text-sm ${
+                    className={`whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-sm ${
                       m.is_myself
                         ? "rounded-br-sm bg-primary-500 text-white"
                         : "rounded-bl-sm border border-card-border bg-surface text-gray-800 shadow-card"
@@ -362,6 +363,9 @@ export default function ChatWidget() {
                     {m.content}
                   </div>
                 )}
+
+                {/* Product photos, an order slip or a QR the AI attached. */}
+                {m.sender.is_ai && m.metadata && <ShopAttachments messageId={m.id} metadata={m.metadata} />}
 
                 {/* Reaction summary pills, e.g. "👍 2 ❤️ 1" */}
                 {hasReactions && (

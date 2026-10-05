@@ -251,6 +251,19 @@ export function setSupportAi(
   );
 }
 
+/**
+ * "Xác nhận đặt hàng" on an order slip the AI drew up in the support chat:
+ * the API places the order from the slip stored with that message (pressing
+ * twice returns the same order). Same answer as createShopOrder.
+ */
+export function confirmChatOrder(messageId: number): Promise<CreateOrderResponse> {
+  return shopFetch<CreateOrderResponse>(
+    `/shop/support/messages/${messageId}/order`,
+    { method: "POST" },
+    true
+  );
+}
+
 export interface ServerCart {
   items: { product: ShopProduct; variant: ShopProductVariant | null; quantity: number }[];
   updated_at: string | null;

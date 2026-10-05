@@ -24,6 +24,61 @@ export interface ChatReactions {
   my_reactions: ReactionType[];
 }
 
+/** A product photo the AI sends when asked to show an item. Resolved by the API from the shop's own catalogue. */
+export interface ChatProductImage {
+  product_id: number;
+  variant_id: number | null;
+  name: string;
+  variant_label: string | null;
+  price: number;
+  image_url: string;
+}
+
+/**
+ * An order slip the AI drew up from the conversation. Nothing is ordered
+ * until the customer confirms it (confirmChatOrder in lib/shop); `order_id`
+ * is set once they have.
+ */
+export interface ChatOrderDraft {
+  items: {
+    product_id: number;
+    variant_id: number | null;
+    quantity: number;
+    name: string;
+    variant_label: string | null;
+    price: number;
+    image_url: string | null;
+  }[];
+  recipient_name: string;
+  phone: string;
+  address: string;
+  payment_method: "points" | "qr" | "cod";
+  note: string | null;
+  discount_percent: number | null;
+  subtotal: number;
+  shipping_fee: number;
+  total: number;
+  order_id: number | null;
+}
+
+/** QR + transfer details the AI re-sends for an order still waiting for its bank transfer. */
+export interface ChatPayment {
+  order_id: number;
+  payment_code: string;
+  amount_vnd: number;
+  bank_name: string;
+  bank_account: string;
+  bank_account_holder: string;
+  qr_url: string;
+}
+
+export interface ShopMessageMetadata {
+  shop_images?: ChatProductImage[];
+  shop_order_draft?: ChatOrderDraft;
+  shop_payment?: ChatPayment;
+  [key: string]: unknown;
+}
+
 export interface ChatMessage {
   id: number;
   content: string | null;
@@ -34,6 +89,8 @@ export interface ChatMessage {
   created_at: string | null;
   created_at_human: string | null;
   reactions: ChatReactions;
+  /** Extras the shop AI attaches to its answers - see ShopMessageMetadata. */
+  metadata?: ShopMessageMetadata | null;
 }
 
 interface Paginated<T> {
