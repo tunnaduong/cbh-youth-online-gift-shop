@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, LocateFixed, MapPin, Search, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, LocateFixed, MapPin, Search, X } from "lucide-react";
 import Spinner from "./ui/Spinner";
 
 export interface LatLng {
@@ -421,19 +421,19 @@ function MapDialog({
 
         {/* Other places with the same name: one tap to jump to each. */}
         {hits && hits.length > 1 && (
-          <div className="scrollbar-hide flex gap-2 overflow-x-auto border-b border-gray-100 px-4 py-2">
+          <ScrollRow>
             {hits.map((hit) => (
               <button
                 key={hit.key}
                 type="button"
                 onClick={() => goTo(hit.point, 16)}
-                className="max-w-[240px] shrink-0 rounded-lg bg-chip px-3 py-1.5 text-left transition-colors hover:bg-primary-50"
+                className="max-w-[240px] shrink-0 rounded-lg bg-chip px-3 py-1.5 text-left select-none transition-colors hover:bg-primary-50"
               >
                 <span className="block truncate text-xs font-semibold text-gray-900">{hit.name}</span>
                 {hit.where && <span className="block truncate text-[11px] text-gray-500">{hit.where}</span>}
               </button>
             ))}
-          </div>
+          </ScrollRow>
         )}
 
         {/* `isolate`: Leaflet stacks its own layers up to z-index 1000. */}
@@ -501,5 +501,107 @@ function MapDialog({
       </div>
     </div>,
     document.body
+  );
+}
+
+/**
+ * A single row of chips that scrolls sideways however the device does it:
+ * swipe on a touch screen, and on a computer - where a hidden scrollbar
+ * leaves nothing to grab - the mouse wheel, dragging the row, or the arrow
+ * buttons that appear at whichever end has more.
+ */
+function ScrollRow({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [more, setMore] = useState({ left: false, right: false });
+  // Mouse drag: where it started, and whether it moved far enough to count
+  // as a drag rather than a click on a chip.
+  const drag = useRef<{ startX: number; startScroll: number; moved: boolean } | null>(null);
+
+  const update = () => {
+    const el = ref.current;
+    if (!el) return;
+    setMore({
+      left: el.scrollLeft > 4,
+      right: el.scrollLeft + el.clientWidth < el.scrollWidth - 4,
+    });
+  };
+
+  useEffect(() => {
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+    // Re-measured when the chips change.
+  }, [children]);
+
+  const scrollBy = (direction: 1 | -1) => {
+    const el = ref.current;
+    if (el) el.scrollBy({ left: direction * Math.max(200, el.clientWidth * 0.7), behavior: "smooth" });
+  };
+
+  const arrow =
+    "absolute top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-card-border bg-surface text-gray-700 shadow-md transition duration-200 hover:bg-gray-50 active:scale-90";
+
+  return (
+    <div className="relative border-b border-gray-100">
+      <div
+        ref={ref}
+        onScroll={update}
+        // A vertical wheel scrolls the row sideways (a trackpad's own
+        // sideways gesture already does).
+        onWheel={(e) => {
+          if (ref.current && Math.abs(e.deltaY) > Math.abs(e.deltaX)) ref.current.scrollLeft += e.deltaY;
+        }}
+        onPointerDown={(e) => {
+          // Touch scrolls natively; this is for the mouse.
+          if (e.pointerType !== "mouse" || !ref.current) return;
+          drag.current = { startX: e.clientX, startScroll: ref.current.scrollLeft, moved: false };
+        }}
+        onPointerMove={(e) => {
+          const d = drag.current;
+          if (!d || !ref.current) return;
+          const dx = e.clientX - d.startX;
+          if (Math.abs(dx) > 5) d.moved = true;
+          if (d.moved) ref.current.scrollLeft = d.startScroll - dx;
+        }}
+        onPointerUp={() => {
+          // Cleared after the click that follows, so that click can be dropped.
+          const d = drag.current;
+          setTimeout(() => {
+            if (drag.current === d) drag.current = null;
+          }, 0);
+        }}
+        onPointerLeave={() => {
+          drag.current = null;
+        }}
+        // Letting go after dragging the row must not also press the chip
+        // under the pointer.
+        onClickCapture={(e) => {
+          if (drag.current?.moved) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+        className="scrollbar-hide flex cursor-grab touch-pan-x gap-2 overflow-x-auto overscroll-x-contain px-4 py-2 active:cursor-grabbing"
+      >
+        {children}
+      </div>
+
+      {more.left && (
+        <>
+          <span className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-surface to-transparent" />
+          <button type="button" onClick={() => scrollBy(-1)} aria-label="Xem gợi ý trước" className={`${arrow} left-1.5`}>
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+        </>
+      )}
+      {more.right && (
+        <>
+          <span className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-surface to-transparent" />
+          <button type="button" onClick={() => scrollBy(1)} aria-label="Xem gợi ý tiếp" className={`${arrow} right-1.5`}>
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </>
+      )}
+    </div>
   );
 }
