@@ -273,15 +273,15 @@ export function setSupportAi(
  */
 export function confirmChatOrder(
   messageId: number,
-  /** The spot the customer confirmed on the map (see LocationPicker). */
-  pin: { lat: number; lng: number }
+  /** The spot the customer confirmed on the map (see LocationPicker), if they chose one. */
+  pin: { lat: number; lng: number } | null
 ): Promise<CreateOrderResponse> {
   return shopFetch<CreateOrderResponse>(
     `/shop/support/messages/${messageId}/order`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ shipping_lat: pin.lat, shipping_lng: pin.lng }),
+      body: JSON.stringify(pin ? { shipping_lat: pin.lat, shipping_lng: pin.lng } : {}),
     },
     true
   );

@@ -81,7 +81,7 @@ function OrderDraftCard({ messageId, draft }: { messageId: number; draft: ChatOr
   const [placedPayment, setPlacedPayment] = useState<QrPayment | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // The spot on the map, required before confirming - same as on the checkout
+  // The spot on the map: optional but encouraged, same as on the checkout
   // page. The API may suggest one it found for the address; it only counts
   // once the customer has looked at the map and confirmed it.
   // An address ordered to before comes with the spot confirmed back then
@@ -92,10 +92,6 @@ function OrderDraftCard({ messageId, draft }: { messageId: number; draft: ChatOr
 
   const handleConfirm = async () => {
     if (confirming) return;
-    if (!pin) {
-      setError("Bạn chọn vị trí giao hàng trên bản đồ trước nhé.");
-      return;
-    }
     setConfirming(true);
     setError(null);
     try {
@@ -194,6 +190,11 @@ function OrderDraftCard({ messageId, draft }: { messageId: number; draft: ChatOr
               suggested={draft.suggested_location ?? null}
               compact
             />
+            {!pin && (
+              <p className="text-center text-[11px] text-gray-400">
+                Không bắt buộc, nhưng ghim vị trí giúp shop giao đúng nơi hơn.
+              </p>
+            )}
             <button
               type="button"
               onClick={handleConfirm}

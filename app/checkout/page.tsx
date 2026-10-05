@@ -41,8 +41,8 @@ export default function CheckoutPage() {
 
   const [shippingAddress, setShippingAddress] = useState("");
   const [phone, setPhone] = useState("");
-  // The pin dropped on the map. Required next to the typed address: an
-  // address alone is often not enough to find the door.
+  // The pin dropped on the map. Optional, but encouraged: a typed address
+  // alone is often not enough to find the door.
   const [pin, setPin] = useState<LatLng | null>(null);
   const [note, setNote] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
@@ -113,10 +113,6 @@ export default function CheckoutPage() {
     }
     if (!/^\d{9,11}$/.test(phone)) {
       setFormError("Số điện thoại chỉ gồm 9-11 chữ số.");
-      return;
-    }
-    if (!pin) {
-      setFormError("Vui lòng chọn vị trí giao hàng trên bản đồ.");
       return;
     }
     setFormError(null);
@@ -308,9 +304,14 @@ export default function CheckoutPage() {
                   </label>
                   <div>
                     <span className="mb-1.5 block text-[13px] font-medium text-gray-700">
-                      Vị trí trên bản đồ <span className="font-normal text-red-500">*</span>
+                      Vị trí trên bản đồ <span className="font-normal text-gray-400">(không bắt buộc, nên chọn)</span>
                     </span>
                     <LocationPicker value={pin} onChange={setPin} address={shippingAddress} />
+                    {!pin && (
+                      <p className="mt-1.5 text-xs text-gray-500">
+                        Ghim vị trí giúp shop giao đúng nơi nhận hơn, nhất là khi địa chỉ khó tìm.
+                      </p>
+                    )}
                   </div>
                   <label className="block">
                     <span className="mb-1.5 block text-[13px] font-medium text-gray-700">Số điện thoại</span>
