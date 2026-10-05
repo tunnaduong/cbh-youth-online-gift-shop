@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, ChevronLeft, ChevronRight, LocateFixed, MapPin, Search, X } from "lucide-react";
 import Spinner from "./ui/Spinner";
+import { useAppMode } from "../lib/appMode";
 
 export interface LatLng {
   lat: number;
@@ -20,6 +21,10 @@ export interface LatLng {
 const LEAFLET_JS = "/vendor/leaflet/leaflet.min.js";
 const LEAFLET_CSS = "/vendor/leaflet/leaflet.min.css";
 const TILE_HOST = "https://tile.openstreetmap.org";
+// OSM's tile policy wants a Referer on every tile request from a web page.
+// Set explicitly so a WebView whose default policy differs from a browser's
+// (the mobile app's) still sends the shop's origin.
+const TILE_REFERRER_POLICY = "strict-origin-when-cross-origin";
 // Free OpenStreetMap search, used to jump the map to an address.
 const SEARCH_URL = "https://photon.komoot.io/api/";
 const VIETNAM_BBOX = "102.1,8.1,109.6,23.5";
@@ -184,6 +189,22 @@ export default function LocationPicker({
 }
 
 /**
+ * The credit OSM's tile policy asks for. A link to the copyright page in a
+ * browser; plain text in the mobile app, whose WebView refuses to leave the
+ * shop's domain (following the link would replace the checkout).
+ */
+function OsmCredit({ className }: { className: string }) {
+  const appMode = useAppMode();
+  const box = `rounded bg-white/80 px-1.5 py-0.5 text-[10px] text-gray-600 ${className}`;
+  if (appMode) return <span className={`pointer-events-none ${box}`}>© OpenStreetMap contributors</span>;
+  return (
+    <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className={`${box} hover:underline`}>
+      © OpenStreetMap contributors
+    </a>
+  );
+}
+
+/**
  * A still picture of the chosen spot: nine map tiles around it, shifted so
  * the point sits in the middle under a pin. Plain images - no second map to
  * load, and nothing to grab by accident while scrolling the form.
@@ -216,6 +237,7 @@ function StaticPreview({ point, className }: { point: LatLng; className: string 
               width={256}
               height={256}
               loading="lazy"
+              referrerPolicy={TILE_REFERRER_POLICY}
               className="block h-64 w-64 max-w-none"
             />
           ))
@@ -224,9 +246,7 @@ function StaticPreview({ point, className }: { point: LatLng; className: string 
       <span className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-full drop-shadow-md">
         {PIN_SVG}
       </span>
-      <span className="pointer-events-none absolute bottom-1 right-1 rounded bg-white/80 px-1.5 py-0.5 text-[10px] text-gray-600">
-        © OpenStreetMap
-      </span>
+      <OsmCredit className="absolute bottom-1 right-1" />
     </div>
   );
 }
@@ -287,7 +307,10 @@ function MapDialog({
           // shop, which the mobile app's WebView refuses to follow.
           attributionControl: false,
         });
-        L.tileLayer(`${TILE_HOST}/{z}/{x}/{y}.png`, { maxZoom: 19 }).addTo(map);
+        L.tileLayer(`${TILE_HOST}/{z}/{x}/{y}.png`, {
+          maxZoom: 19,
+          referrerPolicy: TILE_REFERRER_POLICY,
+        }).addTo(map);
         // A tap or click brings that spot under the pin.
         map.on("click", (e: any) => map.panTo(e.latlng));
         mapRef.current = map;
@@ -471,9 +494,7 @@ function MapDialog({
                 {busy === "locate" ? <Spinner className="h-4 w-4" /> : <LocateFixed className="h-4 w-4 text-brand" />}
                 Vị trí của tôi
               </button>
-              <span className="pointer-events-none absolute bottom-1 left-1 z-[1001] rounded bg-white/80 px-1.5 py-0.5 text-[10px] text-gray-600">
-                © OpenStreetMap
-              </span>
+              <OsmCredit className="absolute bottom-1 left-1 z-[1001]" />
             </>
           )}
 

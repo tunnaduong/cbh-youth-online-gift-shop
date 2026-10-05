@@ -16,6 +16,7 @@ The **CBH Youth Online gift shop**, served at **https://giftshop.chuyenbienhoa.c
 
 | Repo | What it is |
 |---|---|
+| (this commit) | **Map follows OSM's tile usage policy (built; not tried in the app).** The map showed its controls but no tiles in the mobile app's WebView. Tile requests (Leaflet layer and the still preview) now set `referrerPolicy: strict-origin-when-cross-origin` explicitly, since OSM requires a Referer from web pages, and the credit reads "© OpenStreetMap contributors", linked to openstreetmap.org/copyright in a browser and plain text in app mode (the app's WebView can't leave the shop). Tiles still come straight from OSM: a caching proxy (tried and reverted, `7d41dd4` / `54851ab`) is discouraged by the policy. |
 | `cbh-youth-online-api` | Laravel backend (`https://api.chuyenbienhoa.com`). It owns accounts, the shop catalog, orders, payments and chat. **This shop has no backend of its own.** |
 | `cbh-youth-online-next-js` | The main forum site (`www.chuyenbienhoa.com`). It has the only login page. |
 | `cbh-youth-online-mobile` | The Expo / React Native app. Its sidebar opens this shop in a WebView. |
