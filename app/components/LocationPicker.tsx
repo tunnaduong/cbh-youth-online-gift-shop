@@ -19,9 +19,7 @@ export interface LatLng {
 // delivers the order.
 const LEAFLET_JS = "/vendor/leaflet/leaflet.min.js";
 const LEAFLET_CSS = "/vendor/leaflet/leaflet.min.css";
-// OpenStreetMap tiles through the shop's own app/map-tiles route: fetched
-// straight from OSM they came back empty in the mobile app's WebView.
-const TILE_HOST = "/map-tiles";
+const TILE_HOST = "https://tile.openstreetmap.org";
 // Free OpenStreetMap search, used to jump the map to an address.
 const SEARCH_URL = "https://photon.komoot.io/api/";
 const VIETNAM_BBOX = "102.1,8.1,109.6,23.5";
