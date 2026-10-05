@@ -7,6 +7,7 @@ import EmptyState from "../components/ui/EmptyState";
 import { PageSpinner } from "../components/ui/Spinner";
 import { btnPrimary, card, pageTitle, skeleton, stagger } from "../lib/ui";
 import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../contexts/ToastContext";
 import { getLoginUrl } from "../lib/auth";
 import { cancelShopOrder, getMyShopOrders, type ShopOrder } from "../lib/shop";
 
@@ -30,12 +31,11 @@ const PAYMENT_STATUS_LABEL: Record<string, { label: string; className: string }>
   failed: { label: "Thất bại", className: "text-red-500" },
 };
 
-// pending/processing orders that haven't already been paid (points/qr) can
-// still be cancelled - mirrors ShopController::cancelOrder's own rule.
+// An order can be cancelled until it is out for delivery: "shipped" and
+// later can't. Paid or not doesn't matter - points come back at once, a
+// bank transfer is refunded by the shop. Mirrors ShopController::cancelOwnOrder.
 function isCancellable(order: ShopOrder): boolean {
-  if (!["pending", "processing"].includes(order.status)) return false;
-  if (order.payment_method !== "cod" && order.payment_status === "paid") return false;
-  return true;
+  return ["pending", "processing"].includes(order.status);
 }
 
 export default function OrdersPage() {
@@ -44,6 +44,7 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
 
   const fetchOrders = useCallback(() => {
     return getMyShopOrders()
@@ -57,10 +58,24 @@ export default function OrdersPage() {
     fetchOrders();
   }, [loggedIn, fetchOrders]);
 
-  const handleCancel = async (orderId: number) => {
+  const handleCancel = async (order: ShopOrder) => {
+    const orderId = order.id;
+    // Says up front what happens to money already paid.
+    const refundNote =
+      order.payment_status !== "paid"
+        ? ""
+        : order.payment_method === "points"
+          ? " Điểm đã thanh toán sẽ được hoàn lại ngay."
+          : order.payment_method === "qr"
+            ? " Tiền đã chuyển khoản sẽ được shop liên hệ hoàn lại sau."
+            : "";
+    if (!window.confirm(`Bạn chắc chắn muốn hủy đơn #${orderId}?${refundNote}`)) return;
+
     setCancellingId(orderId);
+    setError(null);
     try {
-      await cancelShopOrder(orderId);
+      const res = await cancelShopOrder(orderId);
+      toast(res.message || "Đơn hàng đã được hủy.");
       setLoading(true);
       await fetchOrders();
     } catch (err) {
@@ -122,7 +137,11 @@ export default function OrdersPage() {
                 label: order.status,
                 className: "bg-gray-100 text-gray-500",
               };
-              const paymentStatus = PAYMENT_STATUS_LABEL[order.payment_status];
+              const paymentStatus =
+                // Cancelled after the transfer arrived: the shop still owes the money back.
+                order.status === "cancelled" && order.payment_method === "qr" && order.payment_status === "paid"
+                  ? { label: "Chờ hoàn tiền", className: "text-amber-600" }
+                  : PAYMENT_STATUS_LABEL[order.payment_status];
 
               return (
                 <div
@@ -180,7 +199,7 @@ export default function OrdersPage() {
                   {isCancellable(order) && (
                     <button
                       type="button"
-                      onClick={() => handleCancel(order.id)}
+                      onClick={() => handleCancel(order)}
                       disabled={cancellingId === order.id}
                       className="mt-3 rounded-lg border border-red-500/30 px-3 py-1.5 text-xs font-semibold text-red-500 transition duration-200 hover:bg-red-50 active:scale-95 disabled:border-gray-200 disabled:text-gray-300"
                     >

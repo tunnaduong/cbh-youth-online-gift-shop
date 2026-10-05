@@ -160,6 +160,9 @@ export function getMyShopOrders(page?: number): Promise<Paginated<ShopOrder>> {
 export interface CreateOrderPayload {
   items: { product_id: number; variant_id?: number | null; quantity: number }[];
   shipping_address: string;
+  /** The pin from the checkout map (see LocationPicker). */
+  shipping_lat?: number;
+  shipping_lng?: number;
   phone: string;
   note?: string;
   payment_method: PaymentMethod;
