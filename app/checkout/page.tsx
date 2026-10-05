@@ -105,6 +105,10 @@ export default function CheckoutPage() {
       setFormError("Vui lòng nhập địa chỉ giao hàng và số điện thoại.");
       return;
     }
+    if (!/^\d{9,11}$/.test(phone)) {
+      setFormError("Số điện thoại chỉ gồm 9-11 chữ số.");
+      return;
+    }
     setFormError(null);
     setSubmitting(true);
     try {
@@ -296,9 +300,14 @@ export default function CheckoutPage() {
                     <span className="mb-1.5 block text-[13px] font-medium text-gray-700">Số điện thoại</span>
                     <input
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      // Digits only: anything else typed or pasted (spaces,
+                      // dots, "+84"...) is dropped as it comes in.
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
                       placeholder="Số điện thoại nhận hàng"
                       type="tel"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={11}
                       autoComplete="tel"
                       className={`${input} h-11`}
                     />
