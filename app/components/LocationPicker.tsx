@@ -11,12 +11,14 @@ export interface LatLng {
 }
 
 // The map is Leaflet on OpenStreetMap tiles: no API key, no billing. It is
-// loaded from a CDN on demand (only checkout and the chat's order slip use
-// it) rather than installed as a dependency. The pin it produces is plain
+// loaded on demand (only checkout and the chat's order slip use it) from the
+// shop's own public/vendor/leaflet - a copy of Leaflet 1.9.4 - rather than
+// from a CDN, so the map works wherever the shop itself loads (the mobile
+// app's WebView included). The pin it produces is plain
 // coordinates; the API turns them into a Google Maps link for whoever
 // delivers the order.
-const LEAFLET_JS = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
-const LEAFLET_CSS = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
+const LEAFLET_JS = "/vendor/leaflet/leaflet.min.js";
+const LEAFLET_CSS = "/vendor/leaflet/leaflet.min.css";
 const TILE_HOST = "https://tile.openstreetmap.org";
 // Free OpenStreetMap search, used to jump the map to an address.
 const SEARCH_URL = "https://photon.komoot.io/api/";
@@ -270,6 +272,7 @@ function MapDialog({
 
   useEffect(() => {
     let cancelled = false;
+    let resizeObserver: ResizeObserver | null = null;
     setStatus("loading");
 
     loadLeaflet()
@@ -292,6 +295,12 @@ function MapDialog({
         // The dialog is still animating in when the map is created; measure
         // again once it has settled, or the tiles come out misaligned.
         setTimeout(() => map.invalidateSize(), 350);
+        // And whenever the map's box changes size later (keyboard opening,
+        // rotating the phone, the suggestion row appearing above it).
+        if (typeof ResizeObserver !== "undefined") {
+          resizeObserver = new ResizeObserver(() => map.invalidateSize());
+          resizeObserver.observe(containerRef.current);
+        }
 
         // Nothing chosen yet but an address is known: start the map there
         // instead of making the customer find their town first.
@@ -311,6 +320,7 @@ function MapDialog({
 
     return () => {
       cancelled = true;
+      resizeObserver?.disconnect();
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
@@ -378,7 +388,10 @@ function MapDialog({
         role="dialog"
         aria-modal="true"
         aria-label="Chọn vị trí giao hàng"
-        className="relative flex h-[100dvh] w-full animate-pop-in flex-col overflow-hidden bg-surface shadow-2xl sm:h-[min(720px,88vh)] sm:w-[min(920px,94vw)] sm:rounded-2xl"
+        // h-full, not 100dvh: phone WebViews that don't know the dvh unit drop
+        // the rule, leaving the dialog only as tall as its content and the map
+        // (the flexible part) zero pixels high - the app showed no map at all.
+        className="relative flex h-full w-full animate-pop-in flex-col overflow-hidden bg-surface shadow-2xl sm:h-[min(720px,88vh)] sm:w-[min(920px,94vw)] sm:rounded-2xl"
       >
         <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-4 py-3">
           <div className="min-w-0">
@@ -437,7 +450,7 @@ function MapDialog({
         )}
 
         {/* `isolate`: Leaflet stacks its own layers up to z-index 1000. */}
-        <div className="relative isolate min-h-0 flex-1 bg-gray-100">
+        <div className="relative isolate min-h-[240px] flex-1 bg-gray-100">
           <div ref={containerRef} className="h-full w-full" />
 
           {status === "ready" && (
