@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Check, CircleAlert, MapPin, Phone, ReceiptText, User } from "lucide-react";
+import LocationPicker, { type LatLng } from "../LocationPicker";
 import ProductThumb from "../ProductThumb";
 import Spinner from "../ui/Spinner";
 import type { ChatOrderDraft, ChatPayment, ChatProductImage, ShopMessageMetadata } from "../../lib/chat";
@@ -80,15 +81,23 @@ function OrderDraftCard({ messageId, draft }: { messageId: number; draft: ChatOr
   const [placedPayment, setPlacedPayment] = useState<QrPayment | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The spot on the map, required before confirming - same as on the checkout
+  // page. The API may suggest one it found for the address; it only counts
+  // once the customer has looked at the map and confirmed it.
+  const [pin, setPin] = useState<LatLng | null>(null);
 
   const orderId = draft.order_id ?? placedOrderId;
 
   const handleConfirm = async () => {
     if (confirming) return;
+    if (!pin) {
+      setError("Bạn chọn vị trí giao hàng trên bản đồ trước nhé.");
+      return;
+    }
     setConfirming(true);
     setError(null);
     try {
-      const res = await confirmChatOrder(messageId);
+      const res = await confirmChatOrder(messageId, pin);
       setPlacedOrderId(res.order.id);
       setPlacedPayment(res.payment ?? null);
     } catch (err) {
@@ -173,6 +182,16 @@ function OrderDraftCard({ messageId, draft }: { messageId: number; draft: ChatOr
           </>
         ) : (
           <>
+            <LocationPicker
+              value={pin}
+              onChange={(point) => {
+                setPin(point);
+                setError(null);
+              }}
+              address={draft.address}
+              suggested={draft.suggested_location ?? null}
+              compact
+            />
             <button
               type="button"
               onClick={handleConfirm}

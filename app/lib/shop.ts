@@ -271,10 +271,18 @@ export function setSupportAi(
  * the API places the order from the slip stored with that message (pressing
  * twice returns the same order). Same answer as createShopOrder.
  */
-export function confirmChatOrder(messageId: number): Promise<CreateOrderResponse> {
+export function confirmChatOrder(
+  messageId: number,
+  /** The spot the customer confirmed on the map (see LocationPicker). */
+  pin: { lat: number; lng: number }
+): Promise<CreateOrderResponse> {
   return shopFetch<CreateOrderResponse>(
     `/shop/support/messages/${messageId}/order`,
-    { method: "POST" },
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ shipping_lat: pin.lat, shipping_lng: pin.lng }),
+    },
     true
   );
 }

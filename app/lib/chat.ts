@@ -58,6 +58,8 @@ export interface ChatOrderDraft {
   subtotal: number;
   shipping_fee: number;
   total: number;
+  /** Where the API thinks the address is, to open the map there. Not a choice made for the customer. */
+  suggested_location?: { lat: number; lng: number } | null;
   order_id: number | null;
 }
 
