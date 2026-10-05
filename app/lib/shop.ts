@@ -227,6 +227,18 @@ export interface SupportStatus {
   conversation_id?: number | null;
 }
 
+/**
+ * The floating chat button: the account's support thread, created if this is
+ * the first time. Unlike contactShop nothing is posted into it.
+ */
+export function openSupport(): Promise<{ conversation_id: number; admins_online: number; ai_enabled: boolean }> {
+  return shopFetch<{ conversation_id: number; admins_online: number; ai_enabled: boolean }>(
+    "/shop/support/open",
+    { method: "POST" },
+    true
+  );
+}
+
 /** Live admin online/offline indicator for the chat widget - see ShopController::supportStatus. */
 export function getSupportStatus(): Promise<SupportStatus> {
   return shopFetch<SupportStatus>("/shop/support/status", {}, true);

@@ -13,7 +13,9 @@ import {
   type ChatMessage,
   type ReactionType,
 } from "../lib/chat";
-import { getSupportStatus, setSupportAi } from "../lib/shop";
+import { getSupportStatus, openSupport, setSupportAi } from "../lib/shop";
+import { useAuth } from "../contexts/AuthContext";
+import { usePathname } from "next/navigation";
 import ShopAttachments from "./chat/ShopAttachments";
 
 const POLL_INTERVAL_MS = 4000;
@@ -31,6 +33,13 @@ const REACTION_TYPES: { type: ReactionType; emoji: string; label: string }[] = [
 
 export default function ChatWidget() {
   const { conversationId, open, openChat, closeChat, resetChat } = useChatWidget();
+  const { loggedIn } = useAuth();
+  const pathname = usePathname();
+  // Opening the chat for the first time (no thread yet) asks the API for one.
+  const [opening, setOpening] = useState(false);
+  // True once the thread's messages have arrived, so an empty thread can show
+  // a greeting instead of a blank panel (and not before, while it's loading).
+  const [loaded, setLoaded] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -56,6 +65,7 @@ export default function ChatWidget() {
   // Another thread (another account's, or a fresh one): nothing carries over.
   useEffect(() => {
     setMessages([]);
+    setLoaded(false);
     setAiEnabled(null);
     setPendingAfterId(null);
     setPickerFor(null);
@@ -78,6 +88,7 @@ export default function ChatWidget() {
       getConversationMessages(conversationId)
         .then((msgs) => {
           if (cancelled) return;
+          setLoaded(true);
           // A message sent after this poll's snapshot was taken isn't in it
           // yet: keep it instead of letting it vanish until the next poll.
           const newest = msgs.length ? msgs[msgs.length - 1].id : 0;
@@ -139,7 +150,42 @@ export default function ChatWidget() {
     if (lastMessageId !== null) settledRef.current = true;
   }, [open, lastMessageId, showAiPending]);
 
-  if (!conversationId) return null;
+  // The login handoff page is a bare spinner.
+  if (pathname.startsWith("/auth/")) return null;
+
+  // No thread yet: the button is there anyway for anyone signed in (it used
+  // to appear only after "Nhắn tin" on a product page). The first press
+  // opens - or creates - the account's support thread.
+  if (!conversationId) {
+    if (!loggedIn) return null;
+    const handleOpen = async () => {
+      if (opening) return;
+      setOpening(true);
+      try {
+        const { conversation_id } = await openSupport();
+        openChat(conversation_id);
+      } catch (error) {
+        console.error("Failed to open support chat:", error);
+      } finally {
+        setOpening(false);
+      }
+    };
+    return (
+      <button
+        type="button"
+        onClick={handleOpen}
+        disabled={opening}
+        className="fixed bottom-5 right-5 z-40 flex h-14 w-14 origin-bottom-right animate-pop-in items-center justify-center rounded-full bg-primary-500 text-white shadow-glow transition duration-200 hover:scale-105 hover:bg-primary-600 active:scale-95 disabled:opacity-80"
+        aria-label="Mở khung chat hỗ trợ"
+      >
+        {opening ? (
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+        ) : (
+          <MessageCircle className="h-6 w-6" />
+        )}
+      </button>
+    );
+  }
 
   const showToast = (text: string) => {
     setToast(text);
@@ -320,6 +366,19 @@ export default function ChatWidget() {
       )}
 
       <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto bg-page px-3 py-4">
+        {loaded && messages.length === 0 && (
+          // A thread opened from the floating button starts empty: say what
+          // the assistant can do.
+          <div className="flex animate-fade-up flex-col items-center gap-2 px-4 py-8 text-center">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-50 text-brand">
+              <Bot className="h-6 w-6" />
+            </span>
+            <p className="text-sm font-semibold text-gray-900">Xin chào! Mình là Yoyo AI</p>
+            <p className="text-xs leading-relaxed text-gray-500">
+              Mình có thể tư vấn sản phẩm, gửi ảnh, lập đơn và hỗ trợ thanh toán ngay tại đây. Bạn cần gì cứ nhắn nhé.
+            </p>
+          </div>
+        )}
         {messages.map((m) => {
           // System lines (e.g. the AI being switched on/off) are notes in the
           // thread, not somebody's message bubble.
