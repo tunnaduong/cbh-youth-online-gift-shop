@@ -60,6 +60,8 @@ export interface ChatOrderDraft {
   total: number;
   /** Where the API thinks the address is, to open the map there. Not a choice made for the customer. */
   suggested_location?: { lat: number; lng: number } | null;
+  /** The spot the customer confirmed on an earlier order to these same details (from their address book). */
+  saved_location?: { lat: number; lng: number } | null;
   order_id: number | null;
 }
 

@@ -84,7 +84,9 @@ function OrderDraftCard({ messageId, draft }: { messageId: number; draft: ChatOr
   // The spot on the map, required before confirming - same as on the checkout
   // page. The API may suggest one it found for the address; it only counts
   // once the customer has looked at the map and confirmed it.
-  const [pin, setPin] = useState<LatLng | null>(null);
+  // An address ordered to before comes with the spot confirmed back then
+  // (`saved_location`), so it starts pinned; "Đổi vị trí" still changes it.
+  const [pin, setPin] = useState<LatLng | null>(draft.saved_location ?? null);
 
   const orderId = draft.order_id ?? placedOrderId;
 
