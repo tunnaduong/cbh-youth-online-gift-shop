@@ -6,6 +6,7 @@ import { LogIn, ShoppingCart } from "lucide-react";
 import EmptyState from "../components/ui/EmptyState";
 import Spinner, { PageSpinner } from "../components/ui/Spinner";
 import { btnOutline, btnPrimary, card, input, pageTitle, stagger } from "../lib/ui";
+import LocationPicker, { type LatLng } from "../components/LocationPicker";
 import PaymentMethodSelector, {
   type PaymentMethod,
 } from "../components/PaymentMethodSelector";
@@ -40,6 +41,9 @@ export default function CheckoutPage() {
 
   const [shippingAddress, setShippingAddress] = useState("");
   const [phone, setPhone] = useState("");
+  // The pin dropped on the map. Required next to the typed address: an
+  // address alone is often not enough to find the door.
+  const [pin, setPin] = useState<LatLng | null>(null);
   const [note, setNote] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -86,6 +90,8 @@ export default function CheckoutPage() {
       })),
       shipping_address: shippingAddress.trim(),
       phone: phone.trim(),
+      // Kept on the order; staff get it as a Google Maps link.
+      ...(pin ? { shipping_lat: pin.lat, shipping_lng: pin.lng } : {}),
       note: note.trim() || undefined,
       payment_method: method,
     });
@@ -107,6 +113,10 @@ export default function CheckoutPage() {
     }
     if (!/^\d{9,11}$/.test(phone)) {
       setFormError("Số điện thoại chỉ gồm 9-11 chữ số.");
+      return;
+    }
+    if (!pin) {
+      setFormError("Vui lòng chọn vị trí giao hàng trên bản đồ.");
       return;
     }
     setFormError(null);
@@ -296,6 +306,12 @@ export default function CheckoutPage() {
                       className={`${input} h-11`}
                     />
                   </label>
+                  <div>
+                    <span className="mb-1.5 block text-[13px] font-medium text-gray-700">
+                      Vị trí trên bản đồ <span className="font-normal text-red-500">*</span>
+                    </span>
+                    <LocationPicker value={pin} onChange={setPin} address={shippingAddress} />
+                  </div>
                   <label className="block">
                     <span className="mb-1.5 block text-[13px] font-medium text-gray-700">Số điện thoại</span>
                     <input
