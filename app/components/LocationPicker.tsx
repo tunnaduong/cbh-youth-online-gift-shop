@@ -21,6 +21,30 @@ export interface LatLng {
 const LEAFLET_JS = "/vendor/leaflet/leaflet.min.js";
 const LEAFLET_CSS = "/vendor/leaflet/leaflet.min.css";
 const TILE_HOST = "https://tile.openstreetmap.org";
+// The same tiles through the shop's own app/map-tiles route. Used only when
+// tile.openstreetmap.org can't be reached from this device - some ISPs' DNS
+// (e.g. VNPT's 123.23.23.23) doesn't resolve *.openstreetmap.org, which left
+// the map blank in the mobile app (Chrome got through with its own secure
+// DNS). Everyone else loads the tiles directly.
+const PROXY_TILE_HOST = "/map-tiles";
+const PROXY_FLAG = "cbh_map_tiles_proxy";
+
+/** Whether this tab already found the direct tiles unreachable. */
+function usesTileProxy(): boolean {
+  try {
+    return sessionStorage.getItem(PROXY_FLAG) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function switchToTileProxy() {
+  try {
+    sessionStorage.setItem(PROXY_FLAG, "1");
+  } catch {}
+}
+
+const tileHost = () => (usesTileProxy() ? PROXY_TILE_HOST : TILE_HOST);
 // OSM's tile policy wants a Referer on every tile request from a web page.
 // Set explicitly so a WebView whose default policy differs from a browser's
 // (the mobile app's) still sends the shop's origin.
@@ -56,28 +80,11 @@ interface SearchHit {
 
 let leafletPromise: Promise<Leaflet> | null = null;
 
-/**
- * The shop inside an Android WebView (the mobile app). There the map showed
- * its controls but no tiles, while Chrome and the iOS app were fine: tiles
- * did download, but Android WebView did not paint Leaflet's GPU-composited
- * tile layer (3D transforms, fading, under the dialog's blur). In it the map
- * runs without those (see loadLeaflet and MapDialog).
- */
-function isAndroidWebView(): boolean {
-  if (typeof navigator === "undefined") return false;
-  const ua = navigator.userAgent;
-  return /Android/i.test(ua) && (/; wv\)/.test(ua) || /CBHYouthApp\//.test(ua));
-}
-
 /** Adds Leaflet's script and stylesheet to the page once; resolves with `window.L`. */
 function loadLeaflet(): Promise<Leaflet> {
   const w = window as any;
   if (w.L) return Promise.resolve(w.L);
   if (leafletPromise) return leafletPromise;
-
-  // Read by Leaflet when its script runs: position tiles with left/top
-  // instead of translate3d.
-  if (isAndroidWebView()) w.L_DISABLE_3D = true;
 
   leafletPromise = new Promise<Leaflet>((resolve, reject) => {
     const css = document.createElement("link");
@@ -227,6 +234,14 @@ function OsmCredit({ className }: { className: string }) {
  * load, and nothing to grab by accident while scrolling the form.
  */
 function StaticPreview({ point, className }: { point: LatLng; className: string }) {
+  // Direct tiles unless they are known (or turn out) to be unreachable.
+  // Shown only once a pin was chosen in the browser, so never server-rendered.
+  const [host, setHost] = useState(() => (usesTileProxy() ? PROXY_TILE_HOST : TILE_HOST));
+  const onTileError = () => {
+    if (host === PROXY_TILE_HOST) return;
+    switchToTileProxy();
+    setHost(PROXY_TILE_HOST);
+  };
   const zoom = 16;
   const n = 2 ** zoom;
   const x = ((point.lng + 180) / 360) * n;
@@ -249,7 +264,8 @@ function StaticPreview({ point, className }: { point: LatLng; className: string 
             // eslint-disable-next-line @next/next/no-img-element
             <img
               key={`${dx}:${dy}`}
-              src={`${TILE_HOST}/${zoom}/${tileX + dx}/${tileY + dy}.png`}
+              src={`${host}/${zoom}/${tileX + dx}/${tileY + dy}.png`}
+              onError={onTileError}
               alt=""
               width={256}
               height={256}
@@ -287,8 +303,6 @@ function MapDialog({
   const [hits, setHits] = useState<SearchHit[] | null>(null);
   const [busy, setBusy] = useState<"locate" | "search" | null>(null);
   const [hint, setHint] = useState<string | null>(null);
-  // Decided once: the dialog renders only in the browser.
-  const [plainRendering] = useState(isAndroidWebView);
   // No "Vị trí của tôi" inside the mobile app (app mode).
   const appMode = useAppMode();
 
@@ -327,13 +341,22 @@ function MapDialog({
           // Our own credit line: Leaflet's default one links out of the
           // shop, which the mobile app's WebView refuses to follow.
           attributionControl: false,
-          // No animated (composited) layers in an Android WebView.
-          ...(plainRendering && { fadeAnimation: false, zoomAnimation: false, markerZoomAnimation: false }),
         });
-        L.tileLayer(`${TILE_HOST}/{z}/{x}/{y}.png`, {
+        const tiles = L.tileLayer(`${tileHost()}/{z}/{x}/{y}.png`, {
           maxZoom: 19,
           referrerPolicy: TILE_REFERRER_POLICY,
         }).addTo(map);
+        // Direct tiles failing before any has loaded means OSM is out of
+        // reach from here (see PROXY_TILE_HOST): switch to the shop's route.
+        let tileLoaded = false;
+        tiles.on("tileload", () => {
+          tileLoaded = true;
+        });
+        tiles.on("tileerror", () => {
+          if (tileLoaded || usesTileProxy()) return;
+          switchToTileProxy();
+          tiles.setUrl(`${PROXY_TILE_HOST}/{z}/{x}/{y}.png`);
+        });
         // A tap or click brings that spot under the pin.
         map.on("click", (e: any) => map.panTo(e.latlng));
         mapRef.current = map;
@@ -431,7 +454,7 @@ function MapDialog({
       <div
         aria-hidden
         onClick={onClose}
-        className={`absolute inset-0 bg-black/50 ${plainRendering ? "" : "animate-fade-in backdrop-blur-sm"}`}
+        className="absolute inset-0 animate-fade-in bg-black/50 backdrop-blur-sm"
       />
 
       <div
@@ -441,7 +464,7 @@ function MapDialog({
         // h-full, not 100dvh: phone WebViews that don't know the dvh unit drop
         // the rule, leaving the dialog only as tall as its content and the map
         // (the flexible part) zero pixels high - the app showed no map at all.
-        className={`relative flex h-full w-full ${plainRendering ? "" : "animate-pop-in"} flex-col overflow-hidden bg-surface shadow-2xl sm:h-[min(720px,88vh)] sm:w-[min(920px,94vw)] sm:rounded-2xl`}
+        className="relative flex h-full w-full animate-pop-in flex-col overflow-hidden bg-surface shadow-2xl sm:h-[min(720px,88vh)] sm:w-[min(920px,94vw)] sm:rounded-2xl"
       >
         <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-4 py-3">
           <div className="min-w-0">
