@@ -56,11 +56,28 @@ interface SearchHit {
 
 let leafletPromise: Promise<Leaflet> | null = null;
 
+/**
+ * The shop inside an Android WebView (the mobile app). There the map showed
+ * its controls but no tiles, while Chrome and the iOS app were fine: tiles
+ * did download, but Android WebView did not paint Leaflet's GPU-composited
+ * tile layer (3D transforms, fading, under the dialog's blur). In it the map
+ * runs without those (see loadLeaflet and MapDialog).
+ */
+function isAndroidWebView(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  return /Android/i.test(ua) && (/; wv\)/.test(ua) || /CBHYouthApp\//.test(ua));
+}
+
 /** Adds Leaflet's script and stylesheet to the page once; resolves with `window.L`. */
 function loadLeaflet(): Promise<Leaflet> {
   const w = window as any;
   if (w.L) return Promise.resolve(w.L);
   if (leafletPromise) return leafletPromise;
+
+  // Read by Leaflet when its script runs: position tiles with left/top
+  // instead of translate3d.
+  if (isAndroidWebView()) w.L_DISABLE_3D = true;
 
   leafletPromise = new Promise<Leaflet>((resolve, reject) => {
     const css = document.createElement("link");
@@ -270,6 +287,8 @@ function MapDialog({
   const [hits, setHits] = useState<SearchHit[] | null>(null);
   const [busy, setBusy] = useState<"locate" | "search" | null>(null);
   const [hint, setHint] = useState<string | null>(null);
+  // Decided once: the dialog renders only in the browser.
+  const [plainRendering] = useState(isAndroidWebView);
 
   const goTo = (point: LatLng, zoom = 17) => {
     const map = mapRef.current;
@@ -306,6 +325,8 @@ function MapDialog({
           // Our own credit line: Leaflet's default one links out of the
           // shop, which the mobile app's WebView refuses to follow.
           attributionControl: false,
+          // No animated (composited) layers in an Android WebView.
+          ...(plainRendering && { fadeAnimation: false, zoomAnimation: false, markerZoomAnimation: false }),
         });
         L.tileLayer(`${TILE_HOST}/{z}/{x}/{y}.png`, {
           maxZoom: 19,
@@ -405,7 +426,11 @@ function MapDialog({
   // small fixed box, and this needs the whole screen.
   return createPortal(
     <div className="fixed inset-0 z-[80] flex items-center justify-center">
-      <div aria-hidden onClick={onClose} className="absolute inset-0 animate-fade-in bg-black/50 backdrop-blur-sm" />
+      <div
+        aria-hidden
+        onClick={onClose}
+        className={`absolute inset-0 bg-black/50 ${plainRendering ? "" : "animate-fade-in backdrop-blur-sm"}`}
+      />
 
       <div
         role="dialog"
@@ -414,7 +439,7 @@ function MapDialog({
         // h-full, not 100dvh: phone WebViews that don't know the dvh unit drop
         // the rule, leaving the dialog only as tall as its content and the map
         // (the flexible part) zero pixels high - the app showed no map at all.
-        className="relative flex h-full w-full animate-pop-in flex-col overflow-hidden bg-surface shadow-2xl sm:h-[min(720px,88vh)] sm:w-[min(920px,94vw)] sm:rounded-2xl"
+        className={`relative flex h-full w-full ${plainRendering ? "" : "animate-pop-in"} flex-col overflow-hidden bg-surface shadow-2xl sm:h-[min(720px,88vh)] sm:w-[min(920px,94vw)] sm:rounded-2xl`}
       >
         <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-4 py-3">
           <div className="min-w-0">
