@@ -289,6 +289,8 @@ function MapDialog({
   const [hint, setHint] = useState<string | null>(null);
   // Decided once: the dialog renders only in the browser.
   const [plainRendering] = useState(isAndroidWebView);
+  // No "Vị trí của tôi" inside the mobile app (app mode).
+  const appMode = useAppMode();
 
   const goTo = (point: LatLng, zoom = 17) => {
     const map = mapRef.current;
@@ -509,16 +511,19 @@ function MapDialog({
               </span>
               <span className="pointer-events-none absolute left-1/2 top-1/2 z-[1000] h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/30" />
 
-              <button
-                type="button"
-                onClick={handleLocate}
-                disabled={busy !== null}
-                aria-label="Vị trí của tôi"
-                className="absolute bottom-4 right-4 z-[1001] flex h-11 items-center gap-2 rounded-full border border-card-border bg-surface px-4 text-xs font-semibold text-gray-800 shadow-lg transition duration-200 hover:bg-gray-50 active:scale-95 disabled:opacity-70"
-              >
-                {busy === "locate" ? <Spinner className="h-4 w-4" /> : <LocateFixed className="h-4 w-4 text-brand" />}
-                Vị trí của tôi
-              </button>
+              {/* Not in the mobile app (app mode). */}
+              {!appMode && (
+                <button
+                  type="button"
+                  onClick={handleLocate}
+                  disabled={busy !== null}
+                  aria-label="Vị trí của tôi"
+                  className="absolute bottom-4 right-4 z-[1001] flex h-11 items-center gap-2 rounded-full border border-card-border bg-surface px-4 text-xs font-semibold text-gray-800 shadow-lg transition duration-200 hover:bg-gray-50 active:scale-95 disabled:opacity-70"
+                >
+                  {busy === "locate" ? <Spinner className="h-4 w-4" /> : <LocateFixed className="h-4 w-4 text-brand" />}
+                  Vị trí của tôi
+                </button>
+              )}
               <OsmCredit className="absolute bottom-1 left-1 z-[1001]" />
             </>
           )}
