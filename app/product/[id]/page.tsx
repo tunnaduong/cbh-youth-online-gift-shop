@@ -301,7 +301,7 @@ export default function ProductDetailPage({
 
               {/* Perks */}
               <div style={stagger(5)} className="mt-6 space-y-2 rounded-2xl bg-chip p-4 text-sm text-gray-700">
-                <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 shrink-0 text-brand" /> Giao hàng toàn quốc</div>
+                <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 shrink-0 text-brand" /> Giao hàng quanh Hà Nam cũ</div>
                 <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 shrink-0 text-brand" /> Thanh toán bằng điểm hoặc QR</div>
                 <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 shrink-0 text-brand" /> Sản phẩm chính hãng từ CBH</div>
               </div>

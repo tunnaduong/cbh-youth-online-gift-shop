@@ -15,7 +15,7 @@ const badges = [
   },
   {
     icon: Truck,
-    title: "Giao hàng toàn quốc",
+    title: "Giao hàng quanh Hà Nam cũ",
     desc: "Nhanh chóng & an toàn",
   },
   {
