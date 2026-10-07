@@ -159,6 +159,8 @@ npm run lint         # eslint (eslint-config-next)
 
 ## 6. Recent work (newest first)
 
+> Only the newest rows are kept here, so this file stays short enough to read in full. When adding one, drop the oldest; `git log -p -- INFO.md` has everything that was removed.
+
 | Commit | Change |
 |---|---|
 | (this commit) | **Delivery area wording (text only; not built or run).** "Giao hàng toàn quốc" now reads "Giao hàng quanh Hà Nam cũ" in the sidebar's `TrustBadges.tsx` and on the product page. Nothing checks the address: checkout still accepts any. |
@@ -173,18 +175,6 @@ npm run lint         # eslint (eslint-config-next)
 | `cd8d6c3` | **Fix: support chat AI switch + chat and cart bugs (not built or run: no Node on this machine; goes with an API change).** The switch failed for anyone whose widget pointed at a thread that isn't their own: an admin account (the API put their inquiry into another customer's thread - fixed in the API) or a thread id remembered in `localStorage` from another account. `ChatWidgetContext` now stores the owning account with the thread and drops it on sign-out or account change; `ChatWidget` also takes `conversation_id` from `shop/support/status`. The AI pill stays disabled until the server has said on/off, uses the PUT's answer, and a poll that overlapped a switch is ignored (sequence counter instead of timestamps). Also: no more jump to the bottom every 4s (scrolls on new messages only), a sent message can't appear twice or vanish for one poll, system lines render as centred notes, a failed send shows a toast. `CartContext`: a change not yet saved (tab closed within the debounce, failed save) is flagged in `localStorage.giftshop_cart_dirty` and sent on the next load instead of being replaced by the older account cart; a focus refresh can't overwrite the cart while a save is in flight. |
 | `874b638` | **App sessions.** `/auth/set-token?logout=1` drops the session (revoking it on the API when the app handed it over); a new handoff revokes the previous app-handed session; `cbh_session_source=app` cookie (shared with the main site) marks app-handed sessions. `lib/clientInfo.ts` sends the same device headers as the main site, labelling WebView sessions ("WebView trong ứng dụng CBH Youth") and app-handed browsers ("· mở từ ứng dụng") in the logged-in devices list. |
 | `9035033` | **Cart sync and support chat fixes (not built or run).** `CartContext`: a local cart is merged into the account only when it was built as a guest (`giftshop_cart_user` unset) - a cart left by another account is replaced by the server's, never merged; signing out (also from another CBH site, since the login cookie is shared) empties a cart that belonged to an account; a change made while the account cart is still loading is saved instead of being overwritten; a pending save is dropped when the user changes. `ChatWidget`: a status poll that started before an AI on/off switch can't undo it; the "Yoyo AI đang trả lời..." line gives up after 45s. |
-| `36a31d5` / `f469ffc` | **Support chat AI switch + cart synced with the account (not built or run: no Node on the machine it was written on).** `ChatWidget` has an "AI" pill: while on, the API answers each customer message with Yoyo AI (product, variant and recent orders are given to it server-side); turning it off calls `PUT /shop/support/{id}/ai` and shows a toast. AI replies carry an "AI" badge and a "Yoyo AI đang trả lời..." line shows while waiting. "Nhắn tin" now sends the picked `variant_id`. `CartContext` loads the account cart after sign-in (a guest cart is merged in once), pushes changes (debounced 600 ms), re-reads it when the tab regains focus, and empties the browser copy on sign-out. |
-| (latest) | **Fix: header and pages fit 360px phones.** The header was about 50px wider than a 360px screen (full logo text + icon row with 16px gaps). Now it uses tighter gaps below `sm`, a logo that shrinks and truncates, `px-4` page gutters below `sm`, `min-w-0` on grid/flex children (home columns, category buttons, breadcrumb) and `overflow-wrap:anywhere` on category labels. |
-| `527ad7a` | **Fix: no sideways scrolling on phones or in the app WebView.** `html, body { overflow-x: clip }` (`clip`, not `hidden`, so the sticky header still works), plus an explicit `viewport` export with `maximumScale: 1` so iOS doesn't zoom into inputs. |
-| `dfc7bc4` | **App mode.** `lib/appMode.ts`; in app mode the header account link isn't a link, the login link and sign-out are hidden, and the verify CTA becomes a note. |
-| `c74bc38` | **`/auth/set-token`:** redeems the mobile app's one-time code and writes the shared cookie. `setAuthToken()` was added to `lib/auth.ts`. |
-| `3007b28` / `df137ac` | In-page support chat widget (PR #1). |
-| `ecb6dd7` | Hide the verification invite for students who are already verified. |
-| `b5fda9e`, `a8ef505` | Student 10% discount: struck-through prices and applied at checkout. |
-| `92f271e` | Header search redirects to `/products?search=`, with mobile support. |
-| `996f7db` | 15,000đ shipping fee at checkout. |
-| `aeb6255` | "Xác minh ngay" links to `chuyenbienhoa.com/settings?tab=student-kyc`. |
-| `536c33f` | `/products` listing page. |
 
 **Related changes in the other repos, made in the same session:**
 - **API:** added the `web-session/handoff` and `web-session/redeem` endpoints.
