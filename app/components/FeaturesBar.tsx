@@ -1,4 +1,4 @@
-import { PenTool, Leaf, HeartHandshake, Award } from "lucide-react";
+import { PenTool, Leaf, Award } from "lucide-react";
 import { card } from "../lib/ui";
 
 const features = [
@@ -13,11 +13,6 @@ const features = [
     desc: "Bền đẹp, thân thiện môi trường",
   },
   {
-    icon: HeartHandshake,
-    title: "Góp phần phát triển",
-    desc: "5% doanh thu ủng hộ các hoạt động học sinh",
-  },
-  {
     icon: Award,
     title: "Tự hào Chuyên Biên Hòa",
     desc: "Mang niềm tự hào của học sinh đi khắp nơi",
@@ -26,7 +21,7 @@ const features = [
 
 export default function FeaturesBar() {
   return (
-    <div className={`${card} grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-4`}>
+    <div className={`${card} grid grid-cols-1 gap-4 p-4 sm:grid-cols-3 sm:p-5`}>
       {features.map(({ icon: Icon, title, desc }) => (
         <div key={title} className="group flex items-start gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-brand transition duration-200 group-hover:-translate-y-0.5 group-hover:shadow-md">
