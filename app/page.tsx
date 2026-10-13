@@ -32,8 +32,12 @@ export default function Home() {
               </div>
 
               {/* Stays in view beside the catalog on desktop; below lg the
-                  same three cards are also in the drawer. */}
-              <aside className="scrollbar-hide flex min-w-0 flex-col gap-4 lg:sticky lg:top-[85px] lg:max-h-[calc(100vh-101px)] lg:self-start lg:overflow-y-auto">
+                  same three cards are also in the drawer. The cards must not
+                  shrink (*:shrink-0): on a short desktop window the capped,
+                  scrolling column would otherwise squash them to fit, and the
+                  promo card (overflow-hidden, so no min-height) got clipped to
+                  a sliver. Now the column scrolls instead. */}
+              <aside className="scrollbar-hide flex min-w-0 flex-col gap-4 *:shrink-0 lg:sticky lg:top-[85px] lg:max-h-[calc(100vh-101px)] lg:self-start lg:overflow-y-auto">
                 <MiniCart />
                 <PromoBanner />
                 <TrustBadges />
