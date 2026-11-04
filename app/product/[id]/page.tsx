@@ -38,6 +38,7 @@ export default function ProductDetailPage({
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
   const [selected, setSelected] = useState<Record<string, string>>({});
+  const [activeImage, setActiveImage] = useState<string | null>(null);
   const [contacting, setContacting] = useState(false);
 
   const options = useMemo(() => product?.options ?? [], [product]);
@@ -153,13 +154,37 @@ export default function ProductDetailPage({
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-10">
             {/* Image: picking a variant with its own photo fades the new one in
                 (ProductThumb keys the image by its URL). */}
-            <div className={`${card} animate-fade-up self-start overflow-hidden lg:sticky lg:top-[85px]`}>
+            <div className={`${card} animate-fade-up self-start overflow-hidden lg:sticky lg:top-[85px] p-3 sm:p-4`}>
               <ProductThumb
                 icon={getIconForSlug(product.category?.slug)}
-                imageUrl={variant?.image_url || product.image_url}
+                imageUrl={variant?.image_url || activeImage || product.image_url}
                 alt={product.name}
-                className="aspect-square w-full"
+                className="aspect-square w-full rounded-xl overflow-hidden"
               />
+              {((product.image_urls && product.image_urls.length > 1) || (variant?.image_url && product.image_urls && product.image_urls.length > 0)) && (
+                <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                  {(product.image_urls || (product.image_url ? [product.image_url] : [])).map((img, idx) => {
+                    const current = variant?.image_url || activeImage || product.image_url;
+                    const isSelected = current === img;
+                    return (
+                      <button
+                        key={`${img}-${idx}`}
+                        type="button"
+                        onClick={() => setActiveImage(img)}
+                        className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition-all ${
+                          isSelected ? "border-brand ring-2 ring-brand/20 opacity-100" : "border-gray-200 dark:border-neutral-700 opacity-60 hover:opacity-100"
+                        }`}
+                      >
+                        <ProductThumb
+                          imageUrl={img}
+                          alt={`${product.name} ${idx + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Info */}

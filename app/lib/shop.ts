@@ -22,6 +22,7 @@ export interface ShopProduct {
   price: number;
   stock: number;
   image_url?: string | null;
+  image_urls?: string[] | null;
   category_id: number;
   category?: ShopCategory;
   is_active: boolean;
