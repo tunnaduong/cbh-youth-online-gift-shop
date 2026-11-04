@@ -22,9 +22,11 @@ export default function CartLineItem({
   const { product, variant, quantity } = item;
   const key = cartItemKey(item);
 
+  const productHref = `/product/${product.slug || product.id}`;
+
   return (
     <div className="flex animate-fade-in items-center gap-3">
-      <Link href={`/product/${product.id}`} className="shrink-0">
+      <Link href={productHref} className="shrink-0">
         <ProductThumb
           icon={getIconForSlug(product.category?.slug)}
           imageUrl={variant?.image_url || product.image_url}
@@ -33,7 +35,7 @@ export default function CartLineItem({
         />
       </Link>
       <div className="min-w-0 flex-1">
-        <Link href={`/product/${product.id}`}>
+        <Link href={productHref}>
           <p className="truncate text-sm font-medium text-gray-900 transition-colors hover:text-brand-strong">
             {product.name}
           </p>

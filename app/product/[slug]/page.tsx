@@ -23,9 +23,9 @@ import { getLoginUrl } from "../../lib/auth";
 export default function ProductDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const { id } = use(params);
+  const { slug } = use(params);
   const { addItem } = useCart();
   const { discounted } = useStudentDiscount();
   const { loggedIn } = useAuth();
@@ -74,9 +74,12 @@ export default function ProductDetailPage({
   };
 
   useEffect(() => {
-    getShopProduct(Number(id))
+    getShopProduct(slug)
       .then((p) => {
         setProduct(p);
+        if (p.slug && slug !== p.slug && typeof window !== "undefined") {
+          window.history.replaceState(null, "", `/product/${p.slug}`);
+        }
         if (p.category_id) {
           getShopProducts({ category_id: p.category_id })
             .then((res) => setRelated(res.data.filter((r) => r.id !== p.id).slice(0, 4)))
@@ -85,7 +88,7 @@ export default function ProductDetailPage({
       })
       .catch(() => setError("Không tìm thấy sản phẩm."))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [slug]);
 
   const handleAddToCart = () => {
     if (!product || (hasVariants && !variant)) return;

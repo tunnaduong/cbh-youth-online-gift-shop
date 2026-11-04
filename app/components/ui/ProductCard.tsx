@@ -30,7 +30,7 @@ export default function ProductCard({
   const toast = useToast();
   const [added, setAdded] = useState(false);
   const addedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const href = `/product/${product.id}`;
+  const href = `/product/${product.slug || product.id}`;
   const soldOut = product.stock <= 0;
 
   useEffect(

@@ -27,6 +27,7 @@ export interface ChatReactions {
 /** A product photo the AI sends when asked to show an item. Resolved by the API from the shop's own catalogue. */
 export interface ChatProductImage {
   product_id: number;
+  slug?: string;
   variant_id: number | null;
   name: string;
   variant_label: string | null;

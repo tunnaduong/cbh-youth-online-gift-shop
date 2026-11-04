@@ -54,7 +54,7 @@ export default function ShopAttachments({
 function ProductImageCard({ image }: { image: ChatProductImage }) {
   return (
     <Link
-      href={`/product/${image.product_id}`}
+      href={`/product/${image.slug || image.product_id}`}
       className={`${cardBox} group block transition duration-200 hover:-translate-y-0.5 hover:border-primary-300 hover:shadow-lift`}
     >
       <ProductThumb imageUrl={image.image_url} alt={image.name} className="aspect-square w-full" zoom />

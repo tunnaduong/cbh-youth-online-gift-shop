@@ -149,8 +149,8 @@ export function getShopProducts(params?: {
   return shopFetch<Paginated<ShopProduct>>(`/shop/products${qs ? `?${qs}` : ""}`);
 }
 
-export function getShopProduct(id: number): Promise<ShopProduct> {
-  return shopFetch<ShopProduct>(`/shop/products/${id}`);
+export function getShopProduct(idOrSlug: number | string): Promise<ShopProduct> {
+  return shopFetch<ShopProduct>(`/shop/products/${idOrSlug}`);
 }
 
 export function getMyShopOrders(page?: number): Promise<Paginated<ShopOrder>> {
@@ -209,7 +209,7 @@ export function getOrderPaymentStatus(orderId: number): Promise<PaymentStatusRes
  * minutes" window as getSupportStatus(), at the moment of contact.
  */
 export function contactShop(
-  productId: number,
+  productId: number | string,
   variantId?: number | null
 ): Promise<{ conversation_id: number; admins_online: number; ai_enabled: boolean }> {
   return shopFetch<{ conversation_id: number; admins_online: number; ai_enabled: boolean }>(
